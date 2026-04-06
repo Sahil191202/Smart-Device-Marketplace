@@ -7,6 +7,7 @@ const { connectDB, disconnectDB } = require('./config/db');
 const { connectRedis, disconnectRedis } = require('./config/redis');
 const createApp = require('./app');
 const { startEmailWorker } = require('./jobs/email.worker');
+const { startAIWorker } = require('./jobs/ai.worker');
 const { closeAllQueues } = require('./jobs/queue');
 
 let server;
@@ -20,6 +21,7 @@ const bootstrap = async () => {
     await connectDB();
     await connectRedis();
     startEmailWorker();
+    startAIWorker();
 
     // 2. Create Express app (all middleware registered here)
     const app = createApp();

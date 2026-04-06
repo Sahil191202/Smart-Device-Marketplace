@@ -1,6 +1,7 @@
 // src/modules/products/product.routes.js
 const router = require('express').Router();
 const controller = require('./product.controller');
+const { getPriceAnalysis, refreshPrediction } = require('./priceAnalysis.controller');
 const { authenticate, optionalAuthenticate } = require('../../shared/middleware/authenticate');
 const { authorize } = require('../../shared/middleware/authorize');
 const validate = require('../../shared/middleware/validate');
@@ -85,5 +86,19 @@ router.delete(
   authorize('seller', 'admin'),
   controller.remove
 );
+
+// ── Price Analysis ─────────────────────────────────────────────────────────────
+
+// GET /api/v1/products/:id/price-analysis  — public
+router.get('/:id/price-analysis', getPriceAnalysis);
+
+// POST /api/v1/products/:id/price-analysis/refresh  — seller/admin only
+router.post(
+  '/:id/price-analysis/refresh',
+  authenticate,
+  authorize('seller', 'admin'),
+  refreshPrediction
+);
+
 
 module.exports = router;
