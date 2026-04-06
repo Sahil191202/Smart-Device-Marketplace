@@ -6,6 +6,8 @@ const logger = require('./config/logger');
 const { connectDB, disconnectDB } = require('./config/db');
 const { connectRedis, disconnectRedis } = require('./config/redis');
 const createApp = require('./app');
+const { startEmailWorker } = require('./jobs/email.worker');
+const { closeAllQueues } = require('./jobs/queue');
 
 let server;
 
@@ -17,6 +19,7 @@ const bootstrap = async () => {
     //    If DB fails, we don't accept any requests
     await connectDB();
     await connectRedis();
+    startEmailWorker();
 
     // 2. Create Express app (all middleware registered here)
     const app = createApp();
@@ -58,6 +61,7 @@ const shutdown = async (signal) => {
       await disconnectDB();
       await disconnectRedis();
       logger.info('Graceful shutdown complete');
+      await closeAllQueues();
       process.exit(0);
     } catch (err) {
       logger.error('Shutdown error', { error: err.message });
