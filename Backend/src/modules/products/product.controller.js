@@ -13,7 +13,10 @@ const create = asyncWrapper(async (req, res) => {
 });
 
 const list = asyncWrapper(async (req, res) => {
-  const { items, nextCursor, hasNext } = await productService.list(req.query);
+  const { items, nextCursor, hasNext } = await productService.list(
+    req.query,
+    req.user?.id || null  // req.user set by optionalAuthenticate
+  );
   apiResponse.success(res, {
     message: 'Products fetched',
     data: { products: items },

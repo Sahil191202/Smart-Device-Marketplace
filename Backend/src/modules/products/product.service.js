@@ -1,14 +1,17 @@
 // src/modules/products/product.service.js
-const productRepository = require('./product.repository');
-const { uploadBuffer, deleteAsset } = require('../../config/cloudinary');
-const { addAIJob } = require('../../jobs/queue');
-const { getRedisClient } = require('../../config/redis');
-const AppError = require('../../shared/utils/AppError');
-const logger = require('../../config/logger');
-const { MAX_IMAGES, VIEW_COUNT_TTL, PRODUCT_STATUS } = require('./product.constants');
+const productRepository = require("./product.repository");
+const { uploadBuffer, deleteAsset } = require("../../config/cloudinary");
+const { addAIJob } = require("../../jobs/queue");
+const { getRedisClient } = require("../../config/redis");
+const AppError = require("../../shared/utils/AppError");
+const logger = require("../../config/logger");
+const {
+  MAX_IMAGES,
+  VIEW_COUNT_TTL,
+  PRODUCT_STATUS,
+} = require("./product.constants");
 
 class ProductService {
-
   // ── Create ────────────────────────────────────────────────────────────────
 
   async create({ data, files, sellerId }) {
@@ -27,7 +30,7 @@ class ProductService {
 
     // 3. Queue AI price prediction (async — don't block response)
     // Phase 5 worker will call FastAPI and update predictedPrice
-    await addAIJob('ai:predictPrice', {
+    await addAIJob("ai:predictPrice", {
       productId: product._id.toString(),
       title: product.title,
       category: product.category,
@@ -35,37 +38,62 @@ class ProductService {
       condition: product.condition,
       price: product.price,
       specs: product.specs,
-    }).catch(err => {
+    }).catch((err) => {
       // Non-critical — log but don't fail product creation
-      logger.warn('Failed to queue AI prediction job', {
+      logger.warn("Failed to queue AI prediction job", {
         productId: product._id,
         error: err.message,
       });
     });
 
-    logger.info('Product created', { productId: product._id, sellerId });
+    logger.info("Product created", { productId: product._id, sellerId });
     return product;
   }
 
   // ── List (paginated + filtered) ───────────────────────────────────────────
 
-  async list({ cursor, limit, sort, ...filters }) {
-    // If search query present, use text search path
+  async list({ cursor, limit, sort, ...filters }, userId = null) {
+    let result;
+
     if (filters.q && filters.q.trim()) {
       const q = filters.q.trim();
       delete filters.q;
-      return productRepository.search({ q, limit, cursor, filters });
+      result = await productRepository.search({ q, limit, cursor, filters });
+    } else {
+      delete filters.q;
+      result = await productRepository.findPaginated({
+        cursor,
+        limit,
+        sort,
+        filters,
+      });
     }
 
-    delete filters.q;
-    return productRepository.findPaginated({ cursor, limit, sort, filters });
+    // Inject isWishlisted flag for authenticated users — ONE bulk query
+    if (userId && result.items.length > 0) {
+      const wishlistService = require("../wishlist/wishlist.service");
+      const productIds = result.items.map((p) => p._id.toString());
+      const wishlistedSet = await wishlistService.getBulkWishlistStatus(
+        userId,
+        productIds,
+      );
+
+      result.items = result.items.map((product) => ({
+        ...product,
+        isWishlisted: wishlistedSet.has(product._id.toString()),
+      }));
+    }
+
+    return result;
   }
 
   // ── Get single product ────────────────────────────────────────────────────
 
   async getBySlug(slug, userId = null) {
-    const product = await productRepository.findBySlug(slug, { withSeller: true });
-    if (!product) throw AppError.notFound('Product');
+    const product = await productRepository.findBySlug(slug, {
+      withSeller: true,
+    });
+    if (!product) throw AppError.notFound("Product");
 
     // Track view asynchronously — Redis dedup per user/IP
     this._trackView(product._id.toString(), userId).catch(() => {});
@@ -74,8 +102,10 @@ class ProductService {
   }
 
   async getById(productId) {
-    const product = await productRepository.findById(productId, { withSeller: true });
-    if (!product) throw AppError.notFound('Product');
+    const product = await productRepository.findById(productId, {
+      withSeller: true,
+    });
+    if (!product) throw AppError.notFound("Product");
     return product;
   }
 
@@ -86,14 +116,16 @@ class ProductService {
     await this._assertOwnership(productId, sellerId, role);
 
     // Sellers cannot manually set status to 'removed' (use delete endpoint)
-    if (updates.status === PRODUCT_STATUS.REMOVED && role !== 'admin') {
-      throw AppError.forbidden('Cannot set status to removed. Use the delete endpoint.');
+    if (updates.status === PRODUCT_STATUS.REMOVED && role !== "admin") {
+      throw AppError.forbidden(
+        "Cannot set status to removed. Use the delete endpoint.",
+      );
     }
 
     const updated = await productRepository.update(productId, updates);
-    if (!updated) throw AppError.notFound('Product');
+    if (!updated) throw AppError.notFound("Product");
 
-    logger.info('Product updated', { productId, sellerId });
+    logger.info("Product updated", { productId, sellerId });
     return updated;
   }
 
@@ -103,19 +135,19 @@ class ProductService {
     await this._assertOwnership(productId, sellerId, role);
 
     const product = await productRepository.findById(productId);
-    if (!product) throw AppError.notFound('Product');
+    if (!product) throw AppError.notFound("Product");
 
     const currentCount = product.images?.length || 0;
     if (currentCount + files.length > MAX_IMAGES) {
       throw AppError.badRequest(
-        `Cannot add ${files.length} image(s). Product already has ${currentCount}/${MAX_IMAGES} images.`
+        `Cannot add ${files.length} image(s). Product already has ${currentCount}/${MAX_IMAGES} images.`,
       );
     }
 
     const newImages = await this._uploadImages(files, sellerId, productId);
     const updated = await productRepository.addImages(productId, newImages);
 
-    logger.info('Product images added', { productId, count: newImages.length });
+    logger.info("Product images added", { productId, count: newImages.length });
     return updated;
   }
 
@@ -123,13 +155,15 @@ class ProductService {
     await this._assertOwnership(productId, sellerId, role);
 
     const product = await productRepository.findById(productId);
-    if (!product) throw AppError.notFound('Product');
+    if (!product) throw AppError.notFound("Product");
 
-    const image = product.images?.find(img => img._id.toString() === imageId);
-    if (!image) throw AppError.notFound('Image');
+    const image = product.images?.find((img) => img._id.toString() === imageId);
+    if (!image) throw AppError.notFound("Image");
 
     if (product.images.length === 1) {
-      throw AppError.badRequest('Cannot remove the only image. Add another image first.');
+      throw AppError.badRequest(
+        "Cannot remove the only image. Add another image first.",
+      );
     }
 
     // Remove from DB first
@@ -138,7 +172,7 @@ class ProductService {
     // Delete from Cloudinary after DB update
     await deleteAsset(image.publicId);
 
-    logger.info('Product image removed', { productId, imageId });
+    logger.info("Product image removed", { productId, imageId });
     return updated;
   }
 
@@ -146,10 +180,12 @@ class ProductService {
     await this._assertOwnership(productId, sellerId, role);
 
     const product = await productRepository.findById(productId);
-    if (!product) throw AppError.notFound('Product');
+    if (!product) throw AppError.notFound("Product");
 
-    const imageExists = product.images?.some(img => img._id.toString() === imageId);
-    if (!imageExists) throw AppError.notFound('Image');
+    const imageExists = product.images?.some(
+      (img) => img._id.toString() === imageId,
+    );
+    if (!imageExists) throw AppError.notFound("Image");
 
     return productRepository.setPrimaryImage(productId, imageId);
   }
@@ -160,10 +196,10 @@ class ProductService {
     await this._assertOwnership(productId, sellerId, role);
 
     const product = await productRepository.softDelete(productId);
-    if (!product) throw AppError.notFound('Product');
+    if (!product) throw AppError.notFound("Product");
 
-    logger.info('Product removed', { productId, sellerId });
-    return { message: 'Product removed successfully' };
+    logger.info("Product removed", { productId, sellerId });
+    return { message: "Product removed successfully" };
   }
 
   // ── Seller's own products ─────────────────────────────────────────────────
@@ -183,12 +219,12 @@ class ProductService {
     const redis = getRedisClient();
 
     // Dedup key: one view per user (or IP) per product per 24h
-    const dedupKey = `view:dedup:${productId}:${userId || 'guest'}`;
+    const dedupKey = `view:dedup:${productId}:${userId || "guest"}`;
     const alreadyViewed = await redis.get(dedupKey);
     if (alreadyViewed) return;
 
     // Mark as viewed
-    await redis.setEx(dedupKey, VIEW_COUNT_TTL, '1');
+    await redis.setEx(dedupKey, VIEW_COUNT_TTL, "1");
 
     // Increment view counter in Redis (batch flush to MongoDB periodically)
     await redis.incr(`view:count:${productId}`);
@@ -199,7 +235,7 @@ class ProductService {
 
   async flushViewCounts() {
     const redis = getRedisClient();
-    const keys = await redis.keys('view:count:*');
+    const keys = await redis.keys("view:count:*");
     if (!keys.length) return;
 
     const pipeline = redis.multi();
@@ -208,29 +244,34 @@ class ProductService {
     }
     const counts = await pipeline.exec();
 
-    const updates = keys.map((key, i) => ({
-      productId: key.replace('view:count:', ''),
-      count: parseInt(counts[i]) || 0,
-    })).filter(u => u.count > 0);
+    const updates = keys
+      .map((key, i) => ({
+        productId: key.replace("view:count:", ""),
+        count: parseInt(counts[i]) || 0,
+      }))
+      .filter((u) => u.count > 0);
 
     await Promise.all(
       updates.map(({ productId, count }) =>
-        productRepository.incrementViews(productId, count)
-      )
+        productRepository.incrementViews(productId, count),
+      ),
     );
 
-    logger.info('View counts flushed', { productCount: updates.length });
+    logger.info("View counts flushed", { productCount: updates.length });
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
 
   async _assertOwnership(productId, sellerId, role) {
-    if (role === 'admin') return; // admins bypass ownership check
+    if (role === "admin") return; // admins bypass ownership check
 
-    const product = await productRepository.findByIdAndSeller(productId, sellerId);
+    const product = await productRepository.findByIdAndSeller(
+      productId,
+      sellerId,
+    );
     if (!product) {
       // Return 404 not 403 — don't reveal that the product exists
-      throw AppError.notFound('Product');
+      throw AppError.notFound("Product");
     }
   }
 
@@ -243,18 +284,18 @@ class ProductService {
         uploadBuffer(file.buffer, {
           folder,
           transformation: [
-            { width: 1200, height: 900, crop: 'limit' }, // max dimensions
-            { quality: 'auto', fetch_format: 'auto' },    // auto WebP
+            { width: 1200, height: 900, crop: "limit" }, // max dimensions
+            { quality: "auto", fetch_format: "auto" }, // auto WebP
           ],
-        }).then(result => ({
+        }).then((result) => ({
           url: result.secure_url,
           publicId: result.public_id,
           width: result.width,
           height: result.height,
           format: result.format,
           isPrimary: index === 0 && !productId, // first image is primary for new products
-        }))
-      )
+        })),
+      ),
     );
 
     return uploadResults;

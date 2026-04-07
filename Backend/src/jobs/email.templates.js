@@ -59,8 +59,34 @@ const passwordChangedTemplate = ({ name }) => ({
   `),
 });
 
+
+const priceDropTemplate = ({ name, productTitle, oldPrice, newPrice, dropAmount, dropPercent, productSlug }) => {
+  const frontendUrl = process.env.ALLOWED_ORIGINS?.split(',')[0] || '';
+  const productUrl = `${frontendUrl}/products/slug/${productSlug}`;
+
+  return {
+    subject: `🔥 Price Drop Alert: ${productTitle}`,
+    html: baseTemplate(`
+      <div class="title">Price just dropped! 🎉</div>
+      <p class="text">Hi ${name}, a product on your wishlist just got cheaper.</p>
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:20px;margin:20px 0;">
+        <div style="font-weight:600;font-size:16px;color:#0f172a;margin-bottom:8px;">${productTitle}</div>
+        <div style="display:flex;gap:16px;align-items:center;">
+          <span style="text-decoration:line-through;color:#94a3b8;font-size:14px;">₹${oldPrice.toLocaleString('en-IN')}</span>
+          <span style="font-size:22px;font-weight:700;color:#16a34a;">₹${newPrice.toLocaleString('en-IN')}</span>
+          <span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:4px;font-size:13px;font-weight:600;">-${dropPercent}%</span>
+        </div>
+        <div style="margin-top:8px;color:#16a34a;font-size:13px;">You save ₹${dropAmount.toLocaleString('en-IN')}</div>
+      </div>
+      <a href="${productUrl}" class="btn">View Product</a>
+    `),
+  };
+};
+
+
 module.exports = {
   verifyEmailTemplate,
   passwordResetTemplate,
   passwordChangedTemplate,
+  priceDropTemplate,
 };
