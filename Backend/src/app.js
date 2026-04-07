@@ -19,6 +19,7 @@ const requestId = require("./shared/middleware/requestId");
 const notFound = require("./shared/middleware/notFound");
 const errorHandler = require("./shared/middleware/errorHandler");
 const apiResponse = require("./shared/utils/apiResponse");
+const orderController = require("./modules/orders/order.controller");
 
 const createApp = () => {
   const app = express();
@@ -53,6 +54,25 @@ const createApp = () => {
     }),
   );
 
+  // Needed for Razorpay webhook signature verification
+  app.use((req, res, next) => {
+    if (req.originalUrl === "/api/v1/orders/webhook/razorpay") {
+      let data = "";
+      req.setEncoding("utf8");
+      req.on("data", (chunk) => {
+        data += chunk;
+      });
+      req.on("end", () => {
+        req.rawBody = data;
+        req.body = JSON.parse(data || "{}");
+        next();
+      });
+    } else {
+      next();
+    }
+  });
+
+  app.post("/api/v1/orders/webhook/razorpay", orderController.razorpayWebhook);
   // ── Body parsing ─────────────────────────────────────────────────────
   app.use(express.json({ limit: "10kb" })); // prevent large payload attacks
   app.use(express.urlencoded({ extended: true, limit: "10kb" }));
@@ -153,6 +173,8 @@ const createApp = () => {
     "/api/v1/notifications",
     require("./modules/notifications/notification.routes"),
   );
+  app.use("/api/v1/cart", require("./modules/cart/cart.routes"));
+  app.use("/api/v1/orders", require("./modules/orders/order.routes"));
 
   // ── 404 handler ──────────────────────────────────────────────────────
   app.use(notFound);

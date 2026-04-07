@@ -54,6 +54,12 @@ const envSchema = Joi.object({
 
   // Sentry
   SENTRY_DSN: Joi.string().uri().allow("").default(""),
+  
+  // Razorpay
+  RAZORPAY_KEY_ID: Joi.string().required(),
+  RAZORPAY_KEY_SECRET: Joi.string().required(),
+  RAZORPAY_WEBHOOK_SECRET: Joi.string().required(),
+  
 }).unknown(false); // ← reject unknown env vars to catch typos
 
 const { error, value: env } = envSchema.validate(process.env, {
