@@ -10,6 +10,9 @@ const {
   VIEW_COUNT_TTL,
   PRODUCT_STATUS,
 } = require("./product.constants");
+const cacheManager = require("../../shared/cache/cache.manager");
+const { CacheKeys } = require("../../shared/cache/cache.keys");
+const TTL = require("../../shared/cache/cache.ttl");
 
 class ProductService {
   // ── Create ────────────────────────────────────────────────────────────────
@@ -52,59 +55,101 @@ class ProductService {
 
   // ── List (paginated + filtered) ───────────────────────────────────────────
 
-  async list({ cursor, limit, sort, ...filters }, userId = null) {
-    let result;
+  async list(queryParams, userId = null) {
+    const { cursor, limit, sort, ...filters } = queryParams;
 
+    // Search results: separate cache key, shorter TTL
     if (filters.q && filters.q.trim()) {
       const q = filters.q.trim();
-      delete filters.q;
-      result = await productRepository.search({ q, limit, cursor, filters });
-    } else {
-      delete filters.q;
-      result = await productRepository.findPaginated({
-        cursor,
-        limit,
-        sort,
-        filters,
-      });
-    }
+      const searchParams = { q, limit, cursor, ...filters };
+      const cacheKey = CacheKeys.productSearch(searchParams);
 
-    // Inject isWishlisted flag for authenticated users — ONE bulk query
-    if (userId && result.items.length > 0) {
-      const wishlistService = require("../wishlist/wishlist.service");
-      const productIds = result.items.map((p) => p._id.toString());
-      const wishlistedSet = await wishlistService.getBulkWishlistStatus(
-        userId,
-        productIds,
+      const result = await cacheManager.getOrSet(
+        cacheKey,
+        () =>
+          productRepository.search({
+            q,
+            limit,
+            cursor,
+            filters: { ...filters, q: undefined },
+          }),
+        TTL.PRODUCT_SEARCH(),
+        [], // search results not tagged (invalidated via TTL)
       );
 
-      result.items = result.items.map((product) => ({
-        ...product,
-        isWishlisted: wishlistedSet.has(product._id.toString()),
-      }));
+      return this._injectWishlistStatus(result, userId);
     }
 
-    return result;
+    // Regular list: cache per query param combination
+    const listParams = { cursor, limit, sort, ...filters };
+    const cacheKey = CacheKeys.productList(listParams);
+
+    // Build tags from filter values (for smart invalidation)
+    const tags = [];
+    if (filters.category) tags.push(`category:${filters.category}`);
+    if (filters.sellerId) tags.push(`seller:${filters.sellerId}`);
+
+    const result = await cacheManager.getOrSet(
+      cacheKey,
+      () => productRepository.findPaginated({ cursor, limit, sort, filters }),
+      TTL.PRODUCT_LIST(),
+      tags,
+    );
+
+    return this._injectWishlistStatus(result, userId);
+  }
+
+  // ── injectWishlistStatus helper ────────────────────────────────────────────────────
+
+  async _injectWishlistStatus(result, userId) {
+    if (!userId || !result?.items?.length) return result;
+
+    const wishlistService = require("../wishlist/wishlist.service");
+    const productIds = result.items.map((p) => p._id.toString());
+    const wishlistedSet = await wishlistService.getBulkWishlistStatus(
+      userId,
+      productIds,
+    );
+
+    return {
+      ...result,
+      items: result.items.map((product) => ({
+        ...product,
+        isWishlisted: wishlistedSet.has(product._id.toString()),
+      })),
+    };
   }
 
   // ── Get single product ────────────────────────────────────────────────────
 
   async getBySlug(slug, userId = null) {
-    const product = await productRepository.findBySlug(slug, {
-      withSeller: true,
-    });
+    const cacheKey = CacheKeys.productBySlug(slug);
+
+    const product = await cacheManager.getOrSet(
+      cacheKey,
+      () => productRepository.findBySlug(slug, { withSeller: true }),
+      TTL.PRODUCT_DETAIL(),
+      [`product:${slug}`],
+    );
+
     if (!product) throw AppError.notFound("Product");
 
-    // Track view asynchronously — Redis dedup per user/IP
+    // Track view async
     this._trackView(product._id.toString(), userId).catch(() => {});
 
     return product;
   }
 
   async getById(productId) {
-    const product = await productRepository.findById(productId, {
-      withSeller: true,
-    });
+    const cacheKey = CacheKeys.productDetail(productId);
+
+    const product = await cacheManager.getOrSet(
+      cacheKey,
+      () => productRepository.findById(productId, { withSeller: true }),
+      TTL.PRODUCT_DETAIL(),
+      [`product:${productId}`],
+    );
+
     if (!product) throw AppError.notFound("Product");
     return product;
   }
@@ -112,10 +157,7 @@ class ProductService {
   // ── Update ────────────────────────────────────────────────────────────────
 
   async update({ productId, sellerId, role, updates }) {
-    // Ownership check
     await this._assertOwnership(productId, sellerId, role);
-
-    // Sellers cannot manually set status to 'removed' (use delete endpoint)
     if (updates.status === PRODUCT_STATUS.REMOVED && role !== "admin") {
       throw AppError.forbidden(
         "Cannot set status to removed. Use the delete endpoint.",
@@ -124,6 +166,9 @@ class ProductService {
 
     const updated = await productRepository.update(productId, updates);
     if (!updated) throw AppError.notFound("Product");
+
+    // Invalidate caches for this product
+    await cacheManager.invalidateProduct(productId, updated.slug);
 
     logger.info("Product updated", { productId, sellerId });
     return updated;
@@ -197,6 +242,8 @@ class ProductService {
 
     const product = await productRepository.softDelete(productId);
     if (!product) throw AppError.notFound("Product");
+
+    await cacheManager.invalidateProduct(productId, product.slug);
 
     logger.info("Product removed", { productId, sellerId });
     return { message: "Product removed successfully" };

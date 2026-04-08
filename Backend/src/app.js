@@ -117,21 +117,10 @@ const createApp = () => {
     );
   }
 
-  // ── Global rate limiter ──────────────────────────────────────────────
-  // Per-route limiters (e.g., stricter on /auth) applied in route files
-  const globalLimiter = rateLimit({
-    windowMs: env.RATE_LIMIT_WINDOW_MS,
-    max: env.RATE_LIMIT_MAX_REQUESTS,
-    standardHeaders: true, // Return X-RateLimit-* headers
-    legacyHeaders: false,
-    message: {
-      success: false,
-      message: "Too many requests",
-      code: "RATE_LIMIT_EXCEEDED",
-    },
-    skip: (req) => req.url === "/health",
-  });
+  // ── Rate limiter ──────────────────────────────────────────────
+  const { globalLimiter } = require('./shared/middleware/rateLimiter');
   app.use("/api", globalLimiter);
+
 
   // ── Health check (before auth, always accessible) ────────────────────
   app.get("/health", async (req, res) => {

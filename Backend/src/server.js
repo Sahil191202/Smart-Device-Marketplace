@@ -11,6 +11,8 @@ const { startAIWorker } = require("./jobs/ai.worker");
 const { closeAllQueues } = require("./jobs/queue");
 const { startNotificationWorker } = require("./jobs/notification.worker");
 const { startPriceDropScheduler } = require("./jobs/priceDropScheduler");
+const { startCacheJobs } = require('./jobs/cacheWarmer');
+const cacheManager = require('./shared/cache/cache.manager');
 
 let server;
 
@@ -26,6 +28,7 @@ const bootstrap = async () => {
     startAIWorker();
     startNotificationWorker();
     await startPriceDropScheduler();
+    await startCacheJobs();
 
     // 2. Create Express app (all middleware registered here)
     const app = createApp();
@@ -105,3 +108,7 @@ process.on("unhandledRejection", (reason) => {
 });
 
 bootstrap();
+
+server.on('listening', () => {
+  cacheManager.warmProductCache().catch(() => {});
+});

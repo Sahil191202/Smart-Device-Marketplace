@@ -14,23 +14,8 @@ const {
   verifyEmailDto,
 } = require('./auth.dto');
 
-// ── Auth-specific rate limiters ────────────────────────────────────────────
-// Stricter than global limiter — protects against brute force
-
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,   // 15 minutes
-  max: 10,                     // 10 attempts per window
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many auth attempts. Try again in 15 minutes.', code: 'RATE_LIMIT_EXCEEDED' },
-  keyGenerator: (req) => req.ip, // rate limit per IP
-});
-
-const forgotPasswordLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,   // 1 hour
-  max: 3,                      // 3 reset requests per hour
-  message: { success: false, message: 'Too many reset requests. Try again in 1 hour.', code: 'RATE_LIMIT_EXCEEDED' },
-});
+// ──Rate limiters ────────────────────────────────────────────
+const { authLimiter, forgotPasswordLimiter } = require('../../shared/middleware/rateLimiter');
 
 // ── Public routes ──────────────────────────────────────────────────────────
 
