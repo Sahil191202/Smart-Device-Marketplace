@@ -1,17 +1,16 @@
 // src/jobs/notification.worker.js
 const { getQueue, QUEUE_NAMES } = require('./queue');
+const { emitToUser } = require('../sockets/socket.server');
 const logger = require('../config/logger');
 
 /**
- * Notification worker: processes jobs queued by notificationService.
+ * Upgraded notification worker.
+ * Now actually emits via Socket.io (Phase 9 complete).
  *
- * notify:push → placeholder for Phase 9 Socket.io real-time push.
- *               When Socket.io is wired in Phase 9, the socket handler
- *               will emit directly and this job becomes the fallback
- *               for users who are offline.
- *
- * email:notification → price drop + system email notifications
- *                       (email.worker.js handles actual sending)
+ * Flow:
+ * notify:push job → worker picks up → emitToUser()
+ * → Redis adapter broadcasts → recipient's Socket.io connection receives it
+ * → If user offline: silently dropped (notification already in DB from Phase 6)
  */
 const startNotificationWorker = () => {
   const notifQueue = getQueue(QUEUE_NAMES.NOTIFICATION_QUEUE);
@@ -19,19 +18,18 @@ const startNotificationWorker = () => {
   notifQueue.process('notify:push', 10, async (job) => {
     const { userId, notification } = job.data;
 
-    // Phase 9 will replace this with actual Socket.io emit:
-    // io.to(`user:${userId}`).emit('notification', notification);
-    //
-    // For now, log it — the in-app notification is already saved to DB
-    // by notificationService.create(), so the user will see it on next poll.
-    logger.debug('Real-time push (Phase 9 pending)', {
+    // Emit real-time event to user's private room
+    // Works across all Node.js instances via Redis pub/sub adapter
+    emitToUser(userId, 'notification:new', notification);
+
+    logger.debug('Real-time notification emitted', {
       userId,
       notificationId: notification._id,
       type: notification.type,
     });
   });
 
-  logger.info('Notification worker started');
+  logger.info('Notification worker started with Socket.io support');
 };
 
 module.exports = { startNotificationWorker };

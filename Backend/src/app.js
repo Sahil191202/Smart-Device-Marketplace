@@ -164,6 +164,7 @@ const createApp = () => {
   );
   app.use("/api/v1/cart", require("./modules/cart/cart.routes"));
   app.use("/api/v1/orders", require("./modules/orders/order.routes"));
+  app.use('/api/v1/chat', require('./modules/chat/chat.routes'));
 
   // ── 404 handler ──────────────────────────────────────────────────────
   app.use(notFound);
