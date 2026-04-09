@@ -1,0 +1,24 @@
+meta {
+  name: Get Me
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/auth/me
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("returns logged in user", function() {
+    expect(res.getBody().data.user.id).to.equal(bru.getEnvVar("userId"));
+  });
+}

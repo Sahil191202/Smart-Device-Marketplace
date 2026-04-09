@@ -1,0 +1,53 @@
+meta {
+  name: Login
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/auth/login
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "email": "sahil@test.com",
+    "password": "Test@1234"
+  }
+}
+
+script:post-response {
+  // Auto-save tokens to environment for all subsequent requests
+  const body = res.getBody();
+  if (body.data?.accessToken) {
+    bru.setEnvVar("accessToken", body.data.accessToken);
+    bru.setEnvVar("userId", body.data.user.id);
+  }
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("accessToken present", function() {
+    expect(res.getBody().data.accessToken).to.be.a("string");
+  });
+
+  test("user object present", function() {
+    const user = res.getBody().data.user;
+    expect(user.id).to.be.a("string");
+    expect(user.email).to.be.a("string");
+    expect(user.role).to.be.a("string");
+  });
+
+  test("httpOnly cookie set", function() {
+    // Cookie is httpOnly — can't read value but header exists
+    expect(res.getHeader("set-cookie")).to.be.a("string");
+  });
+
+  test("no password in response", function() {
+    expect(res.getBody().data.user.passwordHash).to.be.undefined;
+  });
+}

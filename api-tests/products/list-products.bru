@@ -1,0 +1,34 @@
+meta {
+  name: List Products
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/products?limit=10&sort=newest
+  auth: none
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("returns array of products", function() {
+    expect(res.getBody().data.products).to.be.an("array");
+  });
+
+  test("meta contains pagination fields", function() {
+    const meta = res.getBody().meta;
+    expect(meta).to.have.property("hasNext");
+    expect(meta).to.have.property("nextCursor");
+    expect(meta).to.have.property("count");
+  });
+
+  test("no removed products in list", function() {
+    const products = res.getBody().data.products;
+    products.forEach(p => {
+      expect(p.status).to.not.equal("removed");
+    });
+  });
+}

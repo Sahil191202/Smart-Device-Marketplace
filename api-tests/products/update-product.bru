@@ -1,0 +1,36 @@
+meta {
+  name: Update Product
+  type: http
+  seq: 4
+}
+
+patch {
+  url: {{baseUrl}}/products/{{productId}}
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "price": 82000,
+    "condition": "good"
+  }
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("price updated", function() {
+    expect(res.getBody().data.product.price).to.equal(82000);
+  });
+
+  test("condition updated", function() {
+    expect(res.getBody().data.product.condition).to.equal("good");
+  });
+}

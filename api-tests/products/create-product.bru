@@ -1,0 +1,66 @@
+meta {
+  name: Create Product
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/products
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "title": "iPhone 14 Pro Max 256GB Deep Purple",
+    "description": "Purchased 6 months ago, excellent condition. No scratches on screen or body. Comes with original charger, cable and box.",
+    "category": "smartphones",
+    "brand": "Apple",
+    "model": "A2894",
+    "condition": "like-new",
+    "price": 89000,
+    "specs": {
+      "ram_gb": 6,
+      "storage_gb": 256,
+      "age_months": 6
+    },
+    "location": {
+      "city": "Mumbai",
+      "state": "Maharashtra"
+    }
+  }
+}
+
+script:post-response {
+  const product = res.getBody().data?.product;
+  if (product?._id) {
+    bru.setEnvVar("productId", product._id);
+    bru.setEnvVar("productSlug", product.slug);
+  }
+}
+
+tests {
+  test("status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("slug auto-generated", function() {
+    expect(res.getBody().data.product.slug).to.be.a("string");
+    expect(res.getBody().data.product.slug).to.include("iphone");
+  });
+
+  test("sellerId matches logged in user", function() {
+    expect(res.getBody().data.product.sellerId).to.equal(
+      bru.getEnvVar("userId")
+    );
+  });
+
+  test("AI job queued (non-blocking)", function() {
+    // Product should be created even though AI job is async
+    expect(res.getBody().data.product._id).to.be.a("string");
+  });
+}

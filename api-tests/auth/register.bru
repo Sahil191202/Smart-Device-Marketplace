@@ -1,0 +1,42 @@
+meta {
+  name: Register
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/auth/register
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "Sahil Dev",
+    "email": "sahil@test.com",
+    "password": "Test@1234",
+    "role": "seller"
+  }
+}
+
+tests {
+  test("status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("success is true", function() {
+    expect(res.getBody().success).to.equal(true);
+  });
+
+  test("user email matches", function() {
+    expect(res.getBody().data.user.email).to.equal("sahil@test.com");
+  });
+
+  test("passwordHash not exposed", function() {
+    expect(res.getBody().data.user.passwordHash).to.be.undefined;
+  });
+
+  test("refreshTokens not exposed", function() {
+    expect(res.getBody().data.user.refreshTokens).to.be.undefined;
+  });
+}

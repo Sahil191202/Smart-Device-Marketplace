@@ -1,0 +1,49 @@
+meta {
+  name: Initiate Checkout
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/orders/checkout
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "productId": "{{productId}}",
+    "addressId": "{{addressId}}"
+  }
+}
+
+script:post-response {
+  const data = res.getBody().data;
+  if (data?.orderId) {
+    bru.setEnvVar("orderId", data.orderId);
+    bru.setEnvVar("razorpayOrderId", data.razorpayOrderId);
+  }
+}
+
+tests {
+  test("status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("razorpay order ID returned", function() {
+    expect(res.getBody().data.razorpayOrderId).to.be.a("string");
+  });
+
+  test("amount matches product price", function() {
+    expect(res.getBody().data.amount).to.be.a("number");
+    expect(res.getBody().data.amount).to.be.greaterThan(0);
+  });
+
+  test("razorpay key ID present for frontend", function() {
+    expect(res.getBody().data.razorpayKeyId).to.be.a("string");
+  });
+}

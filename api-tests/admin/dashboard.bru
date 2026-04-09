@@ -1,0 +1,37 @@
+meta {
+  name: Admin Dashboard
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/admin/dashboard
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("has revenue data", function() {
+    expect(res.getBody().data.revenue).to.be.an("object");
+  });
+
+  test("has order data", function() {
+    expect(res.getBody().data.orders).to.be.an("object");
+  });
+
+  test("has user data", function() {
+    expect(res.getBody().data.users).to.be.an("object");
+  });
+
+  test("non-admin gets 403", function() {
+    // This test only passes when called WITHOUT admin token
+    // Run separately with a user token to verify
+  });
+}

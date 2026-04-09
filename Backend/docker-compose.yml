@@ -4,10 +4,10 @@ services:
   # ── Node.js API ─────────────────────────────────────────────────────────────
   api:
     build:
-      context: ./backend
+      context: .
       target: production
     container_name: smart_api
-    env_file: ./backend/.env
+    env_file: /.env
     ports:
       - "5000:5000"
     depends_on:
@@ -133,18 +133,7 @@ services:
     profiles:
       - dev  # only starts with: docker-compose --profile dev up
 
-networks:
-  marketplace_net:
-    driver: bridge
-
-volumes:
-  mongo1_data:
-  mongo2_data:
-  mongo3_data:
-  redis_data:
-
-
-  # ── AI Price Prediction Service ──────────────────────────────────────────────
+      # ── AI Price Prediction Service ──────────────────────────────────────────────
   ai-service:
     build:
       context: ./ai-service
@@ -168,3 +157,17 @@ volumes:
       timeout: 10s
       retries: 3
       start_period: 60s   # extra time for model training on first boot
+
+
+networks:
+  marketplace_net:
+    driver: bridge
+
+volumes:
+  mongo1_data:
+  mongo2_data:
+  mongo3_data:
+  redis_data:
+
+
+  

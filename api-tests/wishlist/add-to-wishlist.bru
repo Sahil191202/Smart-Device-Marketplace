@@ -1,0 +1,28 @@
+meta {
+  name: Add To Wishlist
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/wishlist/{{productId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("wishlisted is true", function() {
+    expect(res.getBody().data.wishlisted).to.equal(true);
+  });
+
+  test("savedPrice snapshot stored", function() {
+    expect(res.getBody().data.savedPrice).to.be.a("number");
+  });
+}

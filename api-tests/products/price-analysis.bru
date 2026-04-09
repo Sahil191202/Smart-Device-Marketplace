@@ -1,0 +1,28 @@
+meta {
+  name: Price Analysis
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/products/{{productId}}/price-analysis
+  auth: none
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("listed price present", function() {
+    expect(res.getBody().data.listed_price).to.be.a("number");
+  });
+
+  test("deal score between 0 and 100", function() {
+    const score = res.getBody().data.deal_score;
+    if (score !== null) {
+      expect(score).to.be.gte(0);
+      expect(score).to.be.lte(100);
+    }
+  });
+}

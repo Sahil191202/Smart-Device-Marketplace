@@ -1,0 +1,29 @@
+meta {
+  name: Get Product By ID
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{baseUrl}}/products/{{productId}}
+  auth: none
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("product has required fields", function() {
+    const p = res.getBody().data.product;
+    expect(p.title).to.be.a("string");
+    expect(p.price).to.be.a("number");
+    expect(p.condition).to.be.a("string");
+    expect(p.category).to.be.a("string");
+  });
+
+  test("seller info populated", function() {
+    expect(res.getBody().data.product.sellerId).to.be.an("object");
+    expect(res.getBody().data.product.sellerId.name).to.be.a("string");
+  });
+}

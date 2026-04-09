@@ -1,0 +1,28 @@
+meta {
+  name: Add To Cart
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/cart/{{productId}}
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("item added", function() {
+    expect(res.getBody().data.added).to.equal(true);
+  });
+
+  test("cart size is a number", function() {
+    expect(res.getBody().data.cartSize).to.be.a("number");
+  });
+}

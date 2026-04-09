@@ -1,0 +1,33 @@
+meta {
+  name: Get Wishlist
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/wishlist
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("wishlist items array present", function() {
+    expect(res.getBody().data.wishlist).to.be.an("array");
+  });
+
+  test("items have price drop info", function() {
+    const items = res.getBody().data.wishlist;
+    if (items.length > 0) {
+      expect(items[0]).to.have.property("savedPrice");
+      expect(items[0]).to.have.property("currentPrice");
+      expect(items[0]).to.have.property("priceDrop");
+    }
+  });
+}

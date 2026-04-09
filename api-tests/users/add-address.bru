@@ -1,0 +1,49 @@
+meta {
+  name: Add Address
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{baseUrl}}/users/me/addresses
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "label": "Home",
+    "line1": "123 MG Road",
+    "city": "Mumbai",
+    "state": "Maharashtra",
+    "pincode": "400001",
+    "country": "India",
+    "isDefault": true
+  }
+}
+
+script:post-response {
+  const addresses = res.getBody().data?.addresses;
+  if (addresses?.length > 0) {
+    bru.setEnvVar("addressId", addresses[0]._id);
+  }
+}
+
+tests {
+  test("status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+
+  test("address added to array", function() {
+    expect(res.getBody().data.addresses).to.be.an("array");
+    expect(res.getBody().data.addresses.length).to.be.greaterThan(0);
+  });
+
+  test("pincode validation", function() {
+    expect(res.getBody().data.addresses[0].pincode).to.equal("400001");
+  });
+}

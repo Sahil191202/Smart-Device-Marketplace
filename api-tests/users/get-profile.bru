@@ -1,0 +1,32 @@
+meta {
+  name: Get Profile
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{baseUrl}}/users/me
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("returns user profile", function() {
+    const user = res.getBody().data.user;
+    expect(user.name).to.be.a("string");
+    expect(user.email).to.be.a("string");
+  });
+
+  test("sensitive fields not exposed", function() {
+    const user = res.getBody().data.user;
+    expect(user.passwordHash).to.be.undefined;
+    expect(user.refreshTokens).to.be.undefined;
+  });
+}

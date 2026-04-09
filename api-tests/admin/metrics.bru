@@ -1,0 +1,32 @@
+meta {
+  name: System Metrics
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{baseUrl}}/admin/metrics
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+tests {
+  test("status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+
+  test("memory stats present", function() {
+    expect(res.getBody().data.memory).to.be.an("object");
+  });
+
+  test("queue depths present", function() {
+    expect(res.getBody().data.queues).to.be.an("object");
+  });
+
+  test("uptime is positive", function() {
+    expect(res.getBody().data.system.uptime).to.be.greaterThan(0);
+  });
+}
