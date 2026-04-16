@@ -1,5 +1,5 @@
-# ai-service/schemas.py
-from pydantic import BaseModel, Field, field_validator
+# schemas.py
+from pydantic import BaseModel, Field, validator  # validator not field_validator
 from typing import Optional
 from enum import Enum
 
@@ -27,25 +27,28 @@ class ConditionEnum(str, Enum):
 
 class PredictRequest(BaseModel):
     product_id: str
-    title: str = Field(..., min_length=3, max_length=200)
+    title: str
     category: CategoryEnum
-    brand: str = Field(..., min_length=1, max_length=50)
+    brand: str
     condition: ConditionEnum
-    listed_price: float = Field(..., gt=0, le=10_000_000)
-    specs: dict = Field(default_factory=dict)
+    listed_price: float
+    specs: dict = {}
 
-    @field_validator("brand")
-    @classmethod
+    # pydantic v1 uses @validator not @field_validator
+    @validator("brand")
     def normalize_brand(cls, v):
         return v.strip().lower()
+
+    class Config:
+        use_enum_values = True
 
 
 class PredictionResult(BaseModel):
     product_id: str
     predicted_price: float
-    confidence: float = Field(..., ge=0.0, le=1.0)
-    price_range: dict  # {"min": float, "max": float}
-    deal_score: float  # 0-100: how good a deal vs AI prediction
+    confidence: float
+    price_range: dict
+    deal_score: float
     model_version: str
 
 

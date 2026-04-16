@@ -9,10 +9,7 @@ const MONGO_OPTIONS = {
   minPoolSize: 2,           // keep 2 warm connections always
   serverSelectionTimeoutMS: 5000,  // fail fast if Mongo unreachable
   socketTimeoutMS: 45000,          // kill idle sockets after 45s
-  connectTimeoutMS: 10000,
-  heartbeatFrequencyMS: 10000,     // check replica set health every 10s
-  retryWrites: true,
-  w: 'majority',                   // write concern for replica set
+  connectTimeoutMS: 10000,                  // write concern for replica set
 };
 
 let isConnected = false;

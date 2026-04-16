@@ -155,8 +155,8 @@ const createApp = () => {
 
   // ── API Routes (modules registered here as they're built) ───────────
   app.use("/api/v1/auth", require("./modules/auth/auth.routes"));
-  app.use("/api/v1/users", require("./modules/users/users.routes"));
-  app.use("/api/v1/products", require("./modules/products/products.routes"));
+  app.use("/api/v1/users", require("./modules/users/user.routes"));
+  app.use("/api/v1/products", require("./modules/products/product.routes"));
   app.use("/api/v1/wishlist", require("./modules/wishlist/wishlist.routes"));
   app.use(
     "/api/v1/notifications",

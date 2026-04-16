@@ -3,7 +3,7 @@ const os = require('os');
 const { getRedisClient } = require('../../config/redis');
 const { getQueue, QUEUE_NAMES } = require('../../jobs/queue');
 const mongoose = require('mongoose');
-const logger = require('../config/logger');
+const logger = require('../../config/logger');
 
 /**
  * Collect system + application metrics.

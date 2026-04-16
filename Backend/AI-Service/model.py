@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import joblib
 import logging
+import os
 from pathlib import Path
 
 from sklearn.pipeline import Pipeline
@@ -16,7 +17,8 @@ from training_data import generate_training_data
 
 logger = logging.getLogger(__name__)
 
-MODEL_PATH = Path("/tmp/price_model.joblib")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_PATH = os.path.join(BASE_DIR, "price_model.joblib")
 MODEL_VERSION = "1.0.0"
 
 # ── Feature definitions ───────────────────────────────────────────────────────
@@ -78,7 +80,7 @@ class PricePredictor:
 
     def _load_or_train(self):
         """Load cached model from disk, or train fresh if not found."""
-        if MODEL_PATH.exists():
+        if os.path.exists(MODEL_PATH):
             logger.info(f"Loading cached model from {MODEL_PATH}")
             self.pipeline, meta = joblib.load(MODEL_PATH)
             self.training_samples = meta["training_samples"]

@@ -60,7 +60,7 @@ const envSchema = Joi.object({
   RAZORPAY_KEY_SECRET: Joi.string().required(),
   RAZORPAY_WEBHOOK_SECRET: Joi.string().required(),
   
-}).unknown(false); // ← reject unknown env vars to catch typos
+}).unknown(true); // ← reject unknown env vars to catch typos
 
 const { error, value: env } = envSchema.validate(process.env, {
   abortEarly: false, // show ALL errors at once
