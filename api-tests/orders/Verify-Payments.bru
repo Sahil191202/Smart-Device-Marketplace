@@ -5,11 +5,25 @@ meta {
 }
 
 post {
-  url: {{baseUrl
-  body: none
-  auth: inherit
+  url: {{baseUrl}}/orders/verify-payment
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxY2Y2ODlhZTBjNzFkODQxYjlmY2IiLCJlbWFpbCI6InNhaGlsMDIxMjE5QGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc2NDIwNjU5LCJleHAiOjE3NzY0MjE1NTksImF1ZCI6InNtYXJ0LW1hcmtldHBsYWNlLWNsaWVudCIsImlzcyI6InNtYXJ0LW1hcmtldHBsYWNlIn0.DfTK83zdLN52qBeTuvi1rylvd5wAsEdcT48pY_i1waw
+}
+
+body:json {
+  {
+    "orderId": "{{orderId}}",
+    "razorpayOrderId": "{{razorpayOrderId}}",
+    "razorpayPaymentId": "pay_test_dummy123",
+    "razorpaySignature": "dummy_signature_local"
+  }
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

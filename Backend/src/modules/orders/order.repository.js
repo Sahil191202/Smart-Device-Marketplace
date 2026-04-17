@@ -1,19 +1,26 @@
 // src/modules/orders/order.repository.js
-const mongoose = require('mongoose');
-const Order = require('./order.model');
+const mongoose = require("mongoose");
+const Order = require("./order.model");
 
 class OrderRepository {
-
   async create(data) {
     return Order.create(data);
   }
 
   async findById(orderId, options = {}) {
-    const query = Order.findById(orderId);
-    if (options.withBuyer) query.populate('buyerId', 'name email avatar');
-    if (options.withSeller) query.populate('sellerId', 'name email avatar');
-    if (options.withProduct) query.populate('productId', 'title slug images');
-    return query.lean();
+    let query = Order.findById(orderId);
+    if (options.withBuyer) {
+      query = query.populate("buyerId", "name email avatar");
+    }
+    if (options.withSeller) {
+      query = query.populate("sellerId", "name email avatar");
+    }
+    if (options.withProduct) {
+      query = query.populate("productId", "title slug images");
+    }
+
+    const order = await query; // 👈 await -> returns Mongoose Document
+    return order;
   }
 
   async findByRazorpayOrderId(razorpayOrderId) {
@@ -43,9 +50,9 @@ class OrderRepository {
       { _id: orderId, version: currentVersion },
       {
         $set: updates,
-        $inc: { version: 1 },        // increment version on every update
+        $inc: { version: 1 }, // increment version on every update
       },
-      { new: true, runValidators: true }
+      { new: true, runValidators: true },
     ).lean();
   }
 
@@ -53,19 +60,24 @@ class OrderRepository {
    * Confirm order + mark product as sold atomically.
    * Uses session for multi-document atomicity (requires replica set).
    */
-  async confirmOrderAndMarkProductSold(orderId, productId, paymentData, currentVersion) {
+  async confirmOrderAndMarkProductSold(
+    orderId,
+    productId,
+    paymentData,
+    currentVersion,
+  ) {
     const session = await mongoose.startSession();
     session.startTransaction();
 
     try {
-      const Product = require('../products/product.model');
+      const Product = require("../products/product.model");
 
       // 1. Confirm order (with version check)
       const order = await Order.findOneAndUpdate(
-        { _id: orderId, version: currentVersion, status: 'pending' },
+        { _id: orderId, version: currentVersion, status: "pending" },
         {
           $set: {
-            status: 'confirmed',
+            status: "confirmed",
             razorpayPaymentId: paymentData.razorpayPaymentId,
             razorpaySignature: paymentData.razorpaySignature,
             ...paymentData.updates,
@@ -73,14 +85,14 @@ class OrderRepository {
           $inc: { version: 1 },
           $push: {
             timeline: {
-              status: 'confirmed',
-              note: 'Payment received successfully',
-              actor: 'system',
+              status: "confirmed",
+              note: "Payment received successfully",
+              actor: "system",
               metadata: { razorpayPaymentId: paymentData.razorpayPaymentId },
             },
           },
         },
-        { new: true, session }
+        { new: true, session },
       );
 
       if (!order) {
@@ -90,9 +102,9 @@ class OrderRepository {
 
       // 2. Mark product as sold
       await Product.updateOne(
-        { _id: productId, status: 'active' },
-        { $set: { status: 'sold' } },
-        { session }
+        { _id: productId, status: "active" },
+        { $set: { status: "sold" } },
+        { session },
       );
 
       await session.commitTransaction();
@@ -109,7 +121,7 @@ class OrderRepository {
     return Order.findByIdAndUpdate(
       orderId,
       { $push: { timeline: event }, $inc: { version: 1 } },
-      { new: true }
+      { new: true },
     ).lean();
   }
 
@@ -121,17 +133,19 @@ class OrderRepository {
 
     if (cursor) {
       try {
-        const decoded = JSON.parse(Buffer.from(cursor, 'base64').toString());
+        const decoded = JSON.parse(Buffer.from(cursor, "base64").toString());
         query._id = { $lt: new mongoose.Types.ObjectId(decoded.id) };
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     const items = await Order.find(query)
       .sort({ createdAt: -1 })
       .limit(limit + 1)
-      .populate('productId', 'title slug images')
-      .populate('buyerId', 'name avatar')
-      .populate('sellerId', 'name avatar')
+      .populate("productId", "title slug images")
+      .populate("buyerId", "name avatar")
+      .populate("sellerId", "name avatar")
       .lean();
 
     const hasNext = items.length > limit;
@@ -140,7 +154,9 @@ class OrderRepository {
     let nextCursor = null;
     if (hasNext && results.length > 0) {
       const last = results[results.length - 1];
-      nextCursor = Buffer.from(JSON.stringify({ id: last._id.toString() })).toString('base64');
+      nextCursor = Buffer.from(
+        JSON.stringify({ id: last._id.toString() }),
+      ).toString("base64");
     }
 
     return { items: results, nextCursor, hasNext };

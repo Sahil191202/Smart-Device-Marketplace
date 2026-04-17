@@ -5,7 +5,8 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/cart
+  url: {{baseUrl}}/cart/count
+  body: none
   auth: bearer
 }
 
@@ -17,15 +18,15 @@ tests {
   test("status is 200", function() {
     expect(res.getStatus()).to.equal(200);
   });
-
+  
   test("cart has items array", function() {
     expect(res.getBody().data.cart.items).to.be.an("array");
   });
-
+  
   test("cart has total", function() {
     expect(res.getBody().data.cart.total).to.be.a("number");
   });
-
+  
   test("cart items have required fields", function() {
     const items = res.getBody().data.cart.items;
     if (items.length > 0) {

@@ -11,7 +11,7 @@ post {
 }
 
 auth:bearer {
-  token: {{accessToken}}
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxY2Y2ODlhZTBjNzFkODQxYjlmY2IiLCJlbWFpbCI6InNhaGlsMDIxMjE5QGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc2NDIwNjU5LCJleHAiOjE3NzY0MjE1NTksImF1ZCI6InNtYXJ0LW1hcmtldHBsYWNlLWNsaWVudCIsImlzcyI6InNtYXJ0LW1hcmtldHBsYWNlIn0.DfTK83zdLN52qBeTuvi1rylvd5wAsEdcT48pY_i1waw
 }
 
 body:json {
@@ -33,16 +33,16 @@ tests {
   test("status is 201", function() {
     expect(res.getStatus()).to.equal(201);
   });
-
+  
   test("razorpay order ID returned", function() {
     expect(res.getBody().data.razorpayOrderId).to.be.a("string");
   });
-
+  
   test("amount matches product price", function() {
     expect(res.getBody().data.amount).to.be.a("number");
     expect(res.getBody().data.amount).to.be.greaterThan(0);
   });
-
+  
   test("razorpay key ID present for frontend", function() {
     expect(res.getBody().data.razorpayKeyId).to.be.a("string");
   });

@@ -7,9 +7,14 @@ meta {
 get {
   url: {{baseUrl}}/products/me/listings
   body: none
-  auth: inherit
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxYjRjNzNmZDRkODg5M2RkY2Q5NmEiLCJlbWFpbCI6InNlbGxlckB0ZXN0LmNvbSIsInJvbGUiOiJzZWxsZXIiLCJpYXQiOjE3NzY0MTgwMjUsImV4cCI6MTc3NjQxODkyNSwiYXVkIjoic21hcnQtbWFya2V0cGxhY2UtY2xpZW50IiwiaXNzIjoic21hcnQtbWFya2V0cGxhY2UifQ.IGpLuwvgjU5V63TomK-rldIbzn_3TAtS8zuRpTwr6dY
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }

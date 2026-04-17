@@ -1,0 +1,30 @@
+meta {
+  name: Seller Marks Order as Shipped
+  type: http
+  seq: 10
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{orderId}}/ship
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxYjRjNzNmZDRkODg5M2RkY2Q5NmEiLCJlbWFpbCI6InNlbGxlckB0ZXN0LmNvbSIsInJvbGUiOiJzZWxsZXIiLCJpYXQiOjE3NzY0MTg0NDksImV4cCI6MTc3NjQxOTM0OSwiYXVkIjoic21hcnQtbWFya2V0cGxhY2UtY2xpZW50IiwiaXNzIjoic21hcnQtbWFya2V0cGxhY2UifQ.bq67oTQKIyyQBF9IuoUFxN6stQ0XG73JSFbn_SKIpJI
+}
+
+body:json {
+  {
+    "courier": "Delhivery",
+    "trackingNumber": "DEL123456789",
+    "trackingUrl": "https://www.delhivery.com/track/DEL123456789",
+    "estimatedDelivery": "2026-05-01"
+  }
+  
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

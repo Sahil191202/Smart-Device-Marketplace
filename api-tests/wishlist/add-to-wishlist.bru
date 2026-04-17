@@ -6,22 +6,23 @@ meta {
 
 post {
   url: {{baseUrl}}/wishlist/{{productId}}
+  body: none
   auth: bearer
 }
 
 auth:bearer {
-  token: {{accessToken}}
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxY2Y2ODlhZTBjNzFkODQxYjlmY2IiLCJlbWFpbCI6InNhaGlsMDIxMjE5QGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc2NDIyNDMwLCJleHAiOjE3NzY0MjMzMzAsImF1ZCI6InNtYXJ0LW1hcmtldHBsYWNlLWNsaWVudCIsImlzcyI6InNtYXJ0LW1hcmtldHBsYWNlIn0.EismSylPIcJEh_6AFQIP5eQEL7vooynK-2s0-eVYnXg
 }
 
 tests {
   test("status is 201", function() {
     expect(res.getStatus()).to.equal(201);
   });
-
+  
   test("wishlisted is true", function() {
     expect(res.getBody().data.wishlisted).to.equal(true);
   });
-
+  
   test("savedPrice snapshot stored", function() {
     expect(res.getBody().data.savedPrice).to.be.a("number");
   });

@@ -11,13 +11,12 @@ patch {
 }
 
 auth:bearer {
-  token: {{accessToken}}
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUyMDE2ZTVhZjgzMTkzNWQ5NWFhNmUiLCJlbWFpbCI6InNhaGlsYW5pczIwMTZAZ21haWwuY29tIiwicm9sZSI6InNlbGxlciIsImlhdCI6MTc3NjQyMjUwNSwiZXhwIjoxNzc2NDIzNDA1LCJhdWQiOiJzbWFydC1tYXJrZXRwbGFjZS1jbGllbnQiLCJpc3MiOiJzbWFydC1tYXJrZXRwbGFjZSJ9.Z_tZXvoRy8_BwNTqQaG5zreF8M7uHLew7H6PYEUZQKw
 }
 
 body:json {
   {
-    "price": 82000,
-    "condition": "good"
+    "price": 22000
   }
 }
 
@@ -25,11 +24,11 @@ tests {
   test("status is 200", function() {
     expect(res.getStatus()).to.equal(200);
   });
-
+  
   test("price updated", function() {
     expect(res.getBody().data.product.price).to.equal(82000);
   });
-
+  
   test("condition updated", function() {
     expect(res.getBody().data.product.condition).to.equal("good");
   });

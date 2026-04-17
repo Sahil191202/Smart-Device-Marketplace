@@ -1,0 +1,20 @@
+meta {
+  name: Buyer Marks as Delivered
+  type: http
+  seq: 11
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{orderId}}/delivered
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxY2Y2ODlhZTBjNzFkODQxYjlmY2IiLCJlbWFpbCI6InNhaGlsMDIxMjE5QGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc2NDIwMjgzLCJleHAiOjE3NzY0MjExODMsImF1ZCI6InNtYXJ0LW1hcmtldHBsYWNlLWNsaWVudCIsImlzcyI6InNtYXJ0LW1hcmtldHBsYWNlIn0.8MDdUsFrS8wB8zqm_HoPp8MSFsW-l-ibPBexT3BwvuQ
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

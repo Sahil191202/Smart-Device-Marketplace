@@ -11,26 +11,23 @@ post {
 }
 
 auth:bearer {
-  token: {{accessToken}}
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUyMDE2ZTVhZjgzMTkzNWQ5NWFhNmUiLCJlbWFpbCI6InNhaGlsYW5pczIwMTZAZ21haWwuY29tIiwicm9sZSI6InNlbGxlciIsImlhdCI6MTc3NjQyMjI5MSwiZXhwIjoxNzc2NDIzMTkxLCJhdWQiOiJzbWFydC1tYXJrZXRwbGFjZS1jbGllbnQiLCJpc3MiOiJzbWFydC1tYXJrZXRwbGFjZSJ9.fm1FH1eLTpXwiJmlMnZEPUcsuFYlBtWZlpbgFGLV53g
 }
 
 body:json {
   {
-    "title": "iPhone 14 Pro Max 256GB Deep Purple",
-    "description": "Purchased 6 months ago, excellent condition. No scratches on screen or body. Comes with original charger, cable and box.",
-    "category": "smartphones",
-    "brand": "Apple",
-    "model": "A2894",
+    "title": "Sony WH-1000XM5 Wireless Headphones Black",
+    "description": "Used for 3 months only, in perfect condition. All accessories and original packaging included.",
+    "category": "headphones",
+    "brand": "Sony",
     "condition": "like-new",
-    "price": 89000,
+    "price": 28000,
     "specs": {
-      "ram_gb": 6,
-      "storage_gb": 256,
-      "age_months": 6
+      "age_months": 3
     },
     "location": {
-      "city": "Mumbai",
-      "state": "Maharashtra"
+      "city": "Bangalore",
+      "state": "Karnataka"
     }
   }
 }
@@ -47,18 +44,18 @@ tests {
   test("status is 201", function() {
     expect(res.getStatus()).to.equal(201);
   });
-
+  
   test("slug auto-generated", function() {
     expect(res.getBody().data.product.slug).to.be.a("string");
     expect(res.getBody().data.product.slug).to.include("iphone");
   });
-
+  
   test("sellerId matches logged in user", function() {
     expect(res.getBody().data.product.sellerId).to.equal(
       bru.getEnvVar("userId")
     );
   });
-
+  
   test("AI job queued (non-blocking)", function() {
     // Product should be created even though AI job is async
     expect(res.getBody().data.product._id).to.be.a("string");

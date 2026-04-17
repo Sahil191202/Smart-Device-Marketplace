@@ -1,0 +1,24 @@
+meta {
+  name: Get All Notifications
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/notifications?unread=true
+  body: none
+  auth: bearer
+}
+
+params:query {
+  unread: true
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUyMDE2ZTVhZjgzMTkzNWQ5NWFhNmUiLCJlbWFpbCI6InNhaGlsYW5pczIwMTZAZ21haWwuY29tIiwicm9sZSI6InNlbGxlciIsImlhdCI6MTc3NjQyMzAzOCwiZXhwIjoxNzc2NDIzOTM4LCJhdWQiOiJzbWFydC1tYXJrZXRwbGFjZS1jbGllbnQiLCJpc3MiOiJzbWFydC1tYXJrZXRwbGFjZSJ9.HZ4wPuRxxOCwraCp3ufNAhFcyszRcK1dUPQKtLirstA
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

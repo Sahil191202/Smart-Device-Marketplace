@@ -1,0 +1,20 @@
+meta {
+  name: Get-Seller-Orders
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{baseUrl}}/orders/my/selling
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxYjRjNzNmZDRkODg5M2RkY2Q5NmEiLCJlbWFpbCI6InNlbGxlckB0ZXN0LmNvbSIsInJvbGUiOiJzZWxsZXIiLCJpYXQiOjE3NzY0MTg0NDksImV4cCI6MTc3NjQxOTM0OSwiYXVkIjoic21hcnQtbWFya2V0cGxhY2UtY2xpZW50IiwiaXNzIjoic21hcnQtbWFya2V0cGxhY2UifQ.bq67oTQKIyyQBF9IuoUFxN6stQ0XG73JSFbn_SKIpJI
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

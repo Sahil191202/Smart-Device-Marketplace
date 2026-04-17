@@ -5,25 +5,26 @@ meta {
 }
 
 get {
-  url: {{baseUrl}}/users/me
+  url: {{baseUrl}}/users/get-profile
+  body: none
   auth: bearer
 }
 
 auth:bearer {
-  token: {{accessToken}}
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxY2Y2ODlhZTBjNzFkODQxYjlmY2IiLCJlbWFpbCI6InNhaGlsMDIxMjE5QGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc2NDIwNjU5LCJleHAiOjE3NzY0MjE1NTksImF1ZCI6InNtYXJ0LW1hcmtldHBsYWNlLWNsaWVudCIsImlzcyI6InNtYXJ0LW1hcmtldHBsYWNlIn0.DfTK83zdLN52qBeTuvi1rylvd5wAsEdcT48pY_i1waw
 }
 
 tests {
   test("status is 200", function() {
     expect(res.getStatus()).to.equal(200);
   });
-
+  
   test("returns user profile", function() {
     const user = res.getBody().data.user;
     expect(user.name).to.be.a("string");
     expect(user.email).to.be.a("string");
   });
-
+  
   test("sensitive fields not exposed", function() {
     const user = res.getBody().data.user;
     expect(user.passwordHash).to.be.undefined;

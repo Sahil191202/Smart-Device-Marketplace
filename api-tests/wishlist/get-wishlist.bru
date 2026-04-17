@@ -6,6 +6,7 @@ meta {
 
 get {
   url: {{baseUrl}}/wishlist
+  body: none
   auth: bearer
 }
 
@@ -17,11 +18,11 @@ tests {
   test("status is 200", function() {
     expect(res.getStatus()).to.equal(200);
   });
-
+  
   test("wishlist items array present", function() {
     expect(res.getBody().data.wishlist).to.be.an("array");
   });
-
+  
   test("items have price drop info", function() {
     const items = res.getBody().data.wishlist;
     if (items.length > 0) {

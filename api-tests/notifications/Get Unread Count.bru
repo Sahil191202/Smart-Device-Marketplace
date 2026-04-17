@@ -1,0 +1,20 @@
+meta {
+  name: Get Unread Count
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{baseUrl}}/notifications/unread-count
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxY2Y2ODlhZTBjNzFkODQxYjlmY2IiLCJlbWFpbCI6InNhaGlsMDIxMjE5QGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc2NDIyNjg0LCJleHAiOjE3NzY0MjM1ODQsImF1ZCI6InNtYXJ0LW1hcmtldHBsYWNlLWNsaWVudCIsImlzcyI6InNtYXJ0LW1hcmtldHBsYWNlIn0.ajQfn5CNXKjSp6qBNJHDHOuBxsSkDA4fqf04lPAQEx0
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

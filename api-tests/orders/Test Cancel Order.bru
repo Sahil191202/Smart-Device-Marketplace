@@ -1,0 +1,30 @@
+meta {
+  name: Test Cancel Order
+  type: http
+  seq: 12
+}
+
+patch {
+  url: {{baseUrl}}/orders/{{newOrderId}}/cancel
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxY2Y2ODlhZTBjNzFkODQxYjlmY2IiLCJlbWFpbCI6InNhaGlsMDIxMjE5QGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc2NDIxNjI0LCJleHAiOjE3NzY0MjI1MjQsImF1ZCI6InNtYXJ0LW1hcmtldHBsYWNlLWNsaWVudCIsImlzcyI6InNtYXJ0LW1hcmtldHBsYWNlIn0.ocpAuUWOIbv1jhLhEM6uJN5yXVU0FEFCWavHtsyYPuE
+}
+
+body:json {
+  {
+    "reason": "Changed my mind, found a better deal"
+  }
+}
+
+vars:pre-request {
+  newOrderId: 69e2075daa6078a93874b9ac
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

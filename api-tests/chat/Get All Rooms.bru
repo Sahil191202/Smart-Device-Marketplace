@@ -1,0 +1,20 @@
+meta {
+  name: Get All Rooms
+  type: http
+  seq: 5
+}
+
+get {
+  url: {{baseUrl}}/chat/rooms
+  body: none
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxY2Y2ODlhZTBjNzFkODQxYjlmY2IiLCJlbWFpbCI6InNhaGlsMDIxMjE5QGdtYWlsLmNvbSIsInJvbGUiOiJ1c2VyIiwiaWF0IjoxNzc2NDIzMjEwLCJleHAiOjE3NzY0MjQxMTAsImF1ZCI6InNtYXJ0LW1hcmtldHBsYWNlLWNsaWVudCIsImlzcyI6InNtYXJ0LW1hcmtldHBsYWNlIn0.cmvM45rDYZ6vFiGMpQszYGrPr6XwjwY8OBolVj5hRHc
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
