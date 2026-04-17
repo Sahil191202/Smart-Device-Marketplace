@@ -3,6 +3,10 @@ const userRepository = require("./user.repository");
 const { uploadBuffer, deleteAsset } = require("../../config/cloudinary");
 const AppError = require("../../shared/utils/AppError");
 const logger = require("../../config/logger");
+const { CacheKeys } = require("../../shared/cache/cache.keys")
+const cacheManager = require("../../shared/cache/cache.manager")
+const TTL = require("../../shared/cache/cache.ttl");
+
 
 class UserService {
   // ── Profile ───────────────────────────────────────────────────────────────

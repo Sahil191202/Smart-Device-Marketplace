@@ -13,10 +13,10 @@ router.use(authenticate);
 // ── Profile ───────────────────────────────────────────────────────────────────
 
 // GET  /api/v1/users/me
-router.get('/me', controller.getProfile);
+router.get('/get-profile', controller.getProfile);
 
 // PATCH /api/v1/users/me
-router.patch('/me', validate(updateProfileDto), controller.updateProfile);
+router.patch('/update-profile', validate(updateProfileDto), controller.updateProfile);
 
 // POST /api/v1/users/me/avatar
 // uploadAvatar middleware runs first: validates file type/size, puts buffer in req.file

@@ -16,13 +16,12 @@ auth:bearer {
 
 body:json {
   {
-    "label": "Home",
-    "line1": "123 MG Road",
-    "city": "Mumbai",
-    "state": "Maharashtra",
-    "pincode": "400001",
-    "country": "India",
-    "isDefault": true
+    "label": "Test",
+    "line1": "789 Test Road",
+    "city": "Delhi",
+    "state": "Delhi",
+    "pincode": "123",
+    "country": "India"
   }
 }
 
@@ -37,12 +36,12 @@ tests {
   test("status is 201", function() {
     expect(res.getStatus()).to.equal(201);
   });
-
+  
   test("address added to array", function() {
     expect(res.getBody().data.addresses).to.be.an("array");
     expect(res.getBody().data.addresses.length).to.be.greaterThan(0);
   });
-
+  
   test("pincode validation", function() {
     expect(res.getBody().data.addresses[0].pincode).to.equal("400001");
   });

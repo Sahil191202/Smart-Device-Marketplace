@@ -32,7 +32,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="SmartMarketplace AI Price Predictor",
+    title="SmartMarketplace AI listed_price Predictor",
     version=MODEL_VERSION,
     lifespan=lifespan,
     docs_url="/docs",   # Swagger UI (disable in production if needed)
@@ -41,7 +41,7 @@ app = FastAPI(
 
 # ── CORS: only allow internal Node.js service ─────────────────────────────────
 # In Docker, Node.js calls FastAPI via internal network — no public access needed
-allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://api:5000").split(",")
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5000").split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
@@ -94,9 +94,9 @@ async def predict(request: Request, body: PredictRequest):
 
     try:
         result = predictor.predict(
-            category=body.category.value,
+            category=body.category,
             brand=body.brand,
-            condition=body.condition.value,
+            condition=body.condition,
             specs=body.specs,
             listed_price=body.listed_price,
         )

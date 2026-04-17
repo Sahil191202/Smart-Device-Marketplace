@@ -1,0 +1,26 @@
+meta {
+  name: Update Profile
+  type: http
+  seq: 7
+}
+
+patch {
+  url: {{baseUrl}}/users/me
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUxYjRjNzNmZDRkODg5M2RkY2Q5NmEiLCJlbWFpbCI6InNlbGxlckB0ZXN0LmNvbSIsInJvbGUiOiJzZWxsZXIiLCJpYXQiOjE3NzY0MDAxMjYsImV4cCI6MTc3NjQwMTAyNiwiYXVkIjoic21hcnQtbWFya2V0cGxhY2UtY2xpZW50IiwiaXNzIjoic21hcnQtbWFya2V0cGxhY2UifQ.r8Us5upmeOUOtUqrU4KLewZc269FadOkryus-72ZY9o
+}
+
+body:json {
+  {
+    "name": "Sahil Kumar"
+  }
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}
