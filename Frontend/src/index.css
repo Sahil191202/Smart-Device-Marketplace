@@ -1,0 +1,106 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+/* Font */
+
+@layer base {
+  :root {
+    --color-primary: 37 99 235;
+    --color-bg: 255 255 255;
+    --color-surface: 248 250 252;
+    --color-border: 226 232 240;
+    --color-text: 15 23 42;
+    --color-muted: 100 116 139;
+  }
+
+  .dark {
+    --color-bg: 15 23 42;
+    --color-surface: 30 41 59;
+    --color-border: 51 65 85;
+    --color-text: 248 250 252;
+    --color-muted: 148 163 184;
+  }
+
+  * {
+    @apply border-[rgb(var(--color-border))];
+  }
+
+  body {
+    @apply bg-[rgb(var(--color-bg))] text-[rgb(var(--color-text))];
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 dark:bg-slate-600 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400 dark:bg-slate-500;
+  }
+}
+
+@layer components {
+  /* Glass effect */
+  .glass {
+    @apply backdrop-blur-xl border rounded-2xl;
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  .dark .glass {
+    background: rgba(30, 41, 59, 0.7);
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-gradient-to-r from-blue-600 to-cyan-400 bg-clip-text text-transparent;
+  }
+
+  /* Card */
+  .card {
+    @apply rounded-2xl shadow-sm border p-4;
+    background: rgb(var(--color-bg));
+    border-color: rgb(var(--color-border));
+  }
+
+  /* Skeleton loader */
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(226, 232, 240, 0.4) 25%,
+      rgba(226, 232, 240, 0.8) 50%,
+      rgba(226, 232, 240, 0.4) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  .dark .shimmer {
+    background: linear-gradient(
+      90deg,
+      rgba(51, 65, 85, 0.4) 25%,
+      rgba(51, 65, 85, 0.8) 50%,
+      rgba(51, 65, 85, 0.4) 75%
+    );
+  }
+}
+
+/* Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}

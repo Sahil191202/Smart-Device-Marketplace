@@ -301,21 +301,36 @@ class OrderService {
       metadata: trackingData,
     });
 
-    // Notify buyer
-    await notificationService
-      .create({
-        userId: order.buyerId,
-        type: NOTIFICATION_TYPES.ORDER_UPDATE,
-        title: "Your order has been shipped!",
-        body: `${order.productSnapshot.title} is on its way. Tracking: ${trackingData.trackingNumber}`,
-        metadata: {
-          orderId: order._id.toString(),
-          status: "shipped",
-          ...trackingData,
-        },
-        actionUrl: `/orders/${order._id}`,
-      })
-      .catch(() => {});
+    // Get buyer details for email
+    const User = require("../users/user.model");
+    const buyer = await User.findById(order.buyerId)
+      .select("name email")
+      .lean();
+
+    // Notify buyer (in-app + email)
+    await notificationService.create({
+      userId: order.buyerId,
+      type: NOTIFICATION_TYPES.ORDER_UPDATE,
+      title: "📦 Your order has been shipped!",
+      body: `${order.productSnapshot.title} is on its way. Tracking: ${trackingData.trackingNumber}`,
+      metadata: {
+        orderId: order._id.toString(),
+        status: "shipped",
+        ...trackingData,
+      },
+      actionUrl: `/orders/${order._id}`,
+      sendEmail: true, // ← trigger email
+      emailData: {
+        to: buyer?.email, // ← buyer email
+        name: buyer?.name,
+        productTitle: order.productSnapshot.title,
+        courier: trackingData.courier,
+        trackingNumber: trackingData.trackingNumber,
+        trackingUrl: trackingData.trackingUrl,
+        estimatedDelivery: trackingData.estimatedDelivery,
+        orderId: order._id.toString(),
+      },
+    });
 
     return updated;
   }
@@ -475,7 +490,16 @@ class OrderService {
   }
 
   async _notifySellerNewOrder(order) {
-    const seller = await userRepository.findById(order.sellerId.toString());
+    const User = require("../users/user.model");
+
+    // Get seller + buyer details
+    const [seller, buyer] = await Promise.all([
+      User.findById(order.sellerId).select("name email").lean(),
+      User.findById(order.buyerId).select("name").lean(),
+    ]);
+
+    if (!seller) return;
+
     await notificationService.create({
       userId: order.sellerId,
       type: NOTIFICATION_TYPES.PRODUCT_SOLD,
@@ -489,10 +513,12 @@ class OrderService {
       actionUrl: `/seller/orders/${order._id}`,
       sendEmail: true,
       emailData: {
-        email: seller?.email,
-        name: seller?.name,
+        to: seller.email, // ← was missing
+        name: seller.name, // ← was missing
         productTitle: order.productSnapshot.title,
         amount: order.amount,
+        buyerName: buyer?.name || "Verified Buyer",
+        orderId: order._id.toString(),
       },
     });
   }
