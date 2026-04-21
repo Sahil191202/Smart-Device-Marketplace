@@ -5,11 +5,16 @@ meta {
 }
 
 post {
-  url: {{baseUrl
+  url: {{baseUrl}}/admin/test/trigger-price-drop
   body: none
-  auth: inherit
+  auth: bearer
+}
+
+auth:bearer {
+  token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiI2OWUyMDE2ZTVhZjgzMTkzNWQ5NWFhNmUiLCJlbWFpbCI6InNhaGlsYW5pczIwMTZAZ21haWwuY29tIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzc2Njc2NjM4LCJleHAiOjE3NzY2Nzc1MzgsImF1ZCI6InNtYXJ0LW1hcmtldHBsYWNlLWNsaWVudCIsImlzcyI6InNtYXJ0LW1hcmtldHBsYWNlIn0.Kw_541XQzxMzTMfEq9UxOHjzVF1dvqspFBI3wSkJdc4
 }
 
 settings {
   encodeUrl: true
+  timeout: 0
 }
