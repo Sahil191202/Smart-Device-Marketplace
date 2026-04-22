@@ -18,6 +18,7 @@ import { useAuthStore } from "./store/auth.store";
 // Pages (lazy loaded for performance)
 import { lazy, Suspense } from "react";
 import { Skeleton } from "./components/ui/Skeleton";
+import DashboardLayout from "./components/layout/DashboardLayout";
 
 const Landing = lazy(() => import("./pages/Landing"));
 const Marketplace = lazy(() => import("./pages/marketplace/Marketplace"));
@@ -132,34 +133,15 @@ const AppContent = () => {
             path="/dashboard"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <DashboardLayout />
               </ProtectedRoute>
             }
-          />
-          <Route
-            path="/dashboard/orders"
-            element={
-              <ProtectedRoute>
-                <Orders />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/addresses"
-            element={
-              <ProtectedRoute>
-                <Addresses />
-              </ProtectedRoute>
-            }
-          />
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="addresses" element={<Addresses />} />
+          </Route>
 
           {/* Seller routes */}
           <Route
