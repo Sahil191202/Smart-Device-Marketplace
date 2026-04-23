@@ -38,6 +38,7 @@ const Chat = lazy(() => import("./pages/chat/Chat"));
 const SellerDashboard = lazy(() => import("./pages/seller/SellerDashboard"));
 const CreateProduct = lazy(() => import("./pages/seller/CreateProduct"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const EditProduct = lazy(() => import("./pages/seller/CreateProduct"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -157,6 +158,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute requiredRole="seller">
                 <CreateProduct />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/seller/edit/:id"
+            element={
+              <ProtectedRoute requiredRole="seller">
+                <EditProduct />
               </ProtectedRoute>
             }
           />

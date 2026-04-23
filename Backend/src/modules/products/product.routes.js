@@ -37,7 +37,7 @@ router.get(
 
 // POST /api/v1/products  — create product with optional images
 router.post(
-  '/',
+  '/create',
   authenticate,
   authorize('seller', 'admin'),
   uploadProductImages,             // multer: req.files populated
