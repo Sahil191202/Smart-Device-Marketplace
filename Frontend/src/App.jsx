@@ -39,6 +39,7 @@ const SellerDashboard = lazy(() => import("./pages/seller/SellerDashboard"));
 const CreateProduct = lazy(() => import("./pages/seller/CreateProduct"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
 const EditProduct = lazy(() => import("./pages/seller/CreateProduct"));
+const Notifications = lazy(() => import("./pages/notifications/Notifications"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -127,6 +128,14 @@ const AppContent = () => {
             element={
               <ProtectedRoute>
                 <Chat />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notifications />
               </ProtectedRoute>
             }
           />
