@@ -14,4 +14,6 @@ export const productsApi = {
       headers: { 'Content-Type': 'multipart/form-data' },
     }),
   removeImage: (id, imageId) => api.delete(`/products/${id}/images/${imageId}`),
+  setPrimaryImage: (productId, imageId) =>
+  api.patch(`/products/${productId}/images/${imageId}/primary`),
 };

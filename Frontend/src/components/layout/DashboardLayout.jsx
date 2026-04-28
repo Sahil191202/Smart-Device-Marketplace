@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   LayoutDashboard, Package, Heart, MapPin,
-  User, MessageCircle, Store, ShieldCheck,
+  User, MessageCircle, Store, BarChart3, ShieldCheck,
   ChevronRight, LogOut,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
@@ -20,6 +20,7 @@ const navItems = [
 
 const sellerItems = [
   { to: '/seller', icon: Store, label: 'Seller Dashboard' },
+  { to: '/seller/analytics', icon: BarChart3, label: 'Analytics' },
 ];
 
 const adminItems = [
