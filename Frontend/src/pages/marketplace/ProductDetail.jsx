@@ -1,27 +1,42 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Heart, ShoppingCart, MessageCircle, Share2,
-  ChevronLeft, ChevronRight, Package, MapPin,
-  Shield, Truck, RotateCcw, Star, ArrowLeft,
-  Loader2, Eye,
-} from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+  Heart,
+  ShoppingCart,
+  MessageCircle,
+  Share2,
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  MapPin,
+  Shield,
+  Truck,
+  RotateCcw,
+  Star,
+  ArrowLeft,
+  Loader2,
+  Eye,
+} from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
-import { productsApi } from '../../api/products.api';
-import { cartApi } from '../../api/cart.api';
-import { wishlistApi } from '../../api/wishlist.api';
-import { chatApi } from '../../api/chat.api';
-import { DealScore } from '../../components/shared/DealScore';
-import { ProductCard } from '../../components/shared/ProductCard';
-import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
-import { PageWrapper } from '../../components/layout/PageWrapper';
-import { useAuthStore } from '../../store/auth.store';
-import { useCartStore } from '../../store/cart.store';
-import { formatPrice, formatDate, getConditionColor } from '../../utils/format';
+import { productsApi } from "../../api/products.api";
+import { cartApi } from "../../api/cart.api";
+import { wishlistApi } from "../../api/wishlist.api";
+import { chatApi } from "../../api/chat.api";
+import { DealScore } from "../../components/shared/DealScore";
+import { ProductCard } from "../../components/shared/ProductCard";
+import { Button } from "../../components/ui/Button";
+import { Badge } from "../../components/ui/Badge";
+import { PageWrapper } from "../../components/layout/PageWrapper";
+import { useAuthStore } from "../../store/auth.store";
+import { useCartStore } from "../../store/cart.store";
+import { formatPrice, formatDate, getConditionColor } from "../../utils/format";
+import { Lightbox } from "../../components/ui/Lightbox";
+import { ShareButton } from "../../components/shared/ShareButton";
+import { RecentlyViewed } from "../../components/shared/RecentlyViewed";
+import { useRecentlyViewed } from "../../hooks/useRecentlyViewed";
 
 export default function ProductDetail() {
   const { slug } = useParams();
@@ -36,7 +51,7 @@ export default function ProductDetail() {
 
   // ── Fetch product ─────────────────────────────────────────────────────────
   const { data: productData, isLoading } = useQuery({
-    queryKey: ['product', slug],
+    queryKey: ["product", slug],
     queryFn: () => productsApi.getBySlug(slug),
     onSuccess: (res) => {
       setIsWishlisted(res.data.data.product.isWishlisted || false);
@@ -44,10 +59,17 @@ export default function ProductDetail() {
   });
 
   const product = productData?.data?.data?.product;
+  const { addProduct } = useRecentlyViewed();
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
+  useEffect(() => {
+    if (product) addProduct(product);
+  }, [product]);
 
   // ── Fetch AI price analysis ───────────────────────────────────────────────
   const { data: analysisData, isLoading: analysisLoading } = useQuery({
-    queryKey: ['priceAnalysis', product?._id],
+    queryKey: ["priceAnalysis", product?._id],
     queryFn: () => productsApi.getPriceAnalysis(product._id),
     enabled: !!product?._id,
     staleTime: 1000 * 60 * 30,
@@ -57,7 +79,7 @@ export default function ProductDetail() {
 
   // ── Fetch related products ────────────────────────────────────────────────
   const { data: relatedData } = useQuery({
-    queryKey: ['products', 'related', product?.category],
+    queryKey: ["products", "related", product?.category],
     queryFn: () =>
       productsApi.list({
         category: product.category,
@@ -67,9 +89,9 @@ export default function ProductDetail() {
     staleTime: 1000 * 60 * 10,
   });
 
-  const related = (relatedData?.data?.data?.products || []).filter(
-    (p) => p._id !== product?._id
-  ).slice(0, 4);
+  const related = (relatedData?.data?.data?.products || [])
+    .filter((p) => p._id !== product?._id)
+    .slice(0, 4);
 
   // ── Add to cart ───────────────────────────────────────────────────────────
   const { mutate: addToCart, isPending: cartPending } = useMutation({
@@ -77,11 +99,11 @@ export default function ProductDetail() {
     onSuccess: () => {
       setAddedToCart(true);
       incrementCart();
-      toast.success('Added to cart!');
+      toast.success("Added to cart!");
       setTimeout(() => setAddedToCart(false), 3000);
     },
     onError: (err) => {
-      const msg = err.response?.data?.message || 'Failed to add to cart';
+      const msg = err.response?.data?.message || "Failed to add to cart";
       toast.error(msg);
     },
   });
@@ -94,8 +116,10 @@ export default function ProductDetail() {
         : wishlistApi.add(product._id),
     onMutate: () => setIsWishlisted((p) => !p),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
-      toast.success(isWishlisted ? 'Removed from wishlist' : 'Saved to wishlist!');
+      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+      toast.success(
+        isWishlisted ? "Removed from wishlist" : "Saved to wishlist!",
+      );
     },
     onError: () => setIsWishlisted((p) => !p),
   });
@@ -107,13 +131,13 @@ export default function ProductDetail() {
       const roomId = res.data.data.room.roomId;
       navigate(`/chat/${roomId}`);
     },
-    onError: () => toast.error('Failed to start chat'),
+    onError: () => toast.error("Failed to start chat"),
   });
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
-      toast.error('Please login to add to cart');
-      navigate('/login');
+      toast.error("Please login to add to cart");
+      navigate("/login");
       return;
     }
     addToCart();
@@ -121,8 +145,8 @@ export default function ProductDetail() {
 
   const handleWishlist = () => {
     if (!isAuthenticated) {
-      toast.error('Please login to save items');
-      navigate('/login');
+      toast.error("Please login to save items");
+      navigate("/login");
       return;
     }
     toggleWishlist();
@@ -130,8 +154,8 @@ export default function ProductDetail() {
 
   const handleChat = () => {
     if (!isAuthenticated) {
-      toast.error('Please login to chat with seller');
-      navigate('/login');
+      toast.error("Please login to chat with seller");
+      navigate("/login");
       return;
     }
     startChat();
@@ -173,7 +197,7 @@ export default function ProductDetail() {
           <h2 className="text-xl font-semibold text-slate-900 dark:text-white mb-4">
             Product not found
           </h2>
-          <Button onClick={() => navigate('/marketplace')} icon={ArrowLeft}>
+          <Button onClick={() => navigate("/marketplace")} icon={ArrowLeft}>
             Back to Marketplace
           </Button>
         </div>
@@ -182,12 +206,11 @@ export default function ProductDetail() {
   }
 
   const images = product.images || [];
-  const seller = typeof product.sellerId === 'object' ? product.sellerId : null;
+  const seller = typeof product.sellerId === "object" ? product.sellerId : null;
 
   return (
     <PageWrapper>
       <div className="container-page py-8 pb-20">
-
         {/* ── Breadcrumb ──────────────────────────────────────────────────── */}
         <button
           onClick={() => navigate(-1)}
@@ -198,11 +221,16 @@ export default function ProductDetail() {
         </button>
 
         <div className="grid lg:grid-cols-2 gap-12">
-
           {/* ── Left: Images ──────────────────────────────────────────────── */}
           <div className="space-y-4">
             {/* Main image */}
-            <div className="relative overflow-hidden rounded-2xl bg-slate-50 dark:bg-slate-800/50 aspect-square">
+            <div
+              onClick={() => {
+                setLightboxIndex(activeImage);
+                setLightboxOpen(true);
+              }}
+              className="relative overflow-hidden rounded-2xl bg-slate-50 dark:bg-slate-800/50 aspect-square"
+            >
               <AnimatePresence mode="wait">
                 <motion.img
                   key={activeImage}
@@ -221,7 +249,9 @@ export default function ProductDetail() {
                 <>
                   <button
                     onClick={() =>
-                      setActiveImage((prev) => (prev === 0 ? images.length - 1 : prev - 1))
+                      setActiveImage((prev) =>
+                        prev === 0 ? images.length - 1 : prev - 1,
+                      )
                     }
                     className="absolute left-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-white/90 dark:bg-dark-800/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
                   >
@@ -229,7 +259,9 @@ export default function ProductDetail() {
                   </button>
                   <button
                     onClick={() =>
-                      setActiveImage((prev) => (prev === images.length - 1 ? 0 : prev + 1))
+                      setActiveImage((prev) =>
+                        prev === images.length - 1 ? 0 : prev + 1,
+                      )
                     }
                     className="absolute right-3 top-1/2 -translate-y-1/2 w-10 h-10 rounded-xl bg-white/90 dark:bg-dark-800/90 backdrop-blur-sm flex items-center justify-center shadow-lg hover:scale-105 transition-transform"
                   >
@@ -255,8 +287,8 @@ export default function ProductDetail() {
                     onClick={() => setActiveImage(i)}
                     className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all ${
                       activeImage === i
-                        ? 'border-primary-500 shadow-md'
-                        : 'border-transparent opacity-60 hover:opacity-80'
+                        ? "border-primary-500 shadow-md"
+                        : "border-transparent opacity-60 hover:opacity-80"
                     }`}
                   >
                     <img
@@ -272,19 +304,23 @@ export default function ProductDetail() {
 
           {/* ── Right: Product info ────────────────────────────────────────── */}
           <div className="space-y-6">
-
             {/* Status + badges */}
             <div className="flex items-center gap-3 flex-wrap">
               <Badge
                 variant={
-                  product.status === 'active' ? 'success' :
-                  product.status === 'sold' ? 'danger' : 'default'
+                  product.status === "active"
+                    ? "success"
+                    : product.status === "sold"
+                      ? "danger"
+                      : "default"
                 }
                 dot
               >
-                {product.status === 'active' ? 'Available' : product.status}
+                {product.status === "active" ? "Available" : product.status}
               </Badge>
-              <span className={`px-3 py-1 rounded-full text-xs font-medium ${getConditionColor(product.condition)}`}>
+              <span
+                className={`px-3 py-1 rounded-full text-xs font-medium ${getConditionColor(product.condition)}`}
+              >
                 {product.condition}
               </span>
               <span className="text-xs text-slate-500 dark:text-slate-400 ml-auto">
@@ -301,12 +337,16 @@ export default function ProductDetail() {
             {/* Meta */}
             <div className="flex flex-wrap items-center gap-4 text-sm text-slate-500 dark:text-slate-400">
               <span>
-                <span className="font-medium text-slate-700 dark:text-slate-200">Brand:</span>{' '}
+                <span className="font-medium text-slate-700 dark:text-slate-200">
+                  Brand:
+                </span>{" "}
                 {product.brand}
               </span>
               {product.model && (
                 <span>
-                  <span className="font-medium text-slate-700 dark:text-slate-200">Model:</span>{' '}
+                  <span className="font-medium text-slate-700 dark:text-slate-200">
+                    Model:
+                  </span>{" "}
                   {product.model}
                 </span>
               )}
@@ -336,7 +376,9 @@ export default function ProductDetail() {
 
             {/* Description */}
             <div>
-              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">Description</h3>
+              <h3 className="font-semibold text-slate-900 dark:text-white mb-2">
+                Description
+              </h3>
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed whitespace-pre-line">
                 {product.description}
               </p>
@@ -355,7 +397,7 @@ export default function ProductDetail() {
                       className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-sm"
                     >
                       <span className="text-slate-500 dark:text-slate-400 capitalize">
-                        {key.replace(/_/g, ' ')}
+                        {key.replace(/_/g, " ")}
                       </span>
                       <span className="font-medium text-slate-900 dark:text-white">
                         {String(value)}
@@ -369,9 +411,9 @@ export default function ProductDetail() {
             {/* Trust badges */}
             <div className="grid grid-cols-3 gap-3">
               {[
-                { icon: Shield, label: 'Secure Payment' },
-                { icon: Truck, label: 'Direct Shipping' },
-                { icon: RotateCcw, label: 'Return Policy' },
+                { icon: Shield, label: "Secure Payment" },
+                { icon: Truck, label: "Direct Shipping" },
+                { icon: RotateCcw, label: "Return Policy" },
               ].map(({ icon: Icon, label }) => (
                 <div
                   key={label}
@@ -386,7 +428,7 @@ export default function ProductDetail() {
             </div>
 
             {/* Action buttons */}
-            {product.status === 'active' && !isOwnProduct && (
+            {product.status === "active" && !isOwnProduct && (
               <div className="space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <Button
@@ -396,9 +438,9 @@ export default function ProductDetail() {
                     disabled={addedToCart}
                     icon={addedToCart ? Star : ShoppingCart}
                     onClick={handleAddToCart}
-                    className={addedToCart ? '!bg-green-500' : ''}
+                    className={addedToCart ? "!bg-green-500" : ""}
                   >
-                    {addedToCart ? 'Added!' : 'Add to Cart'}
+                    {addedToCart ? "Added!" : "Add to Cart"}
                   </Button>
                   <Button
                     size="lg"
@@ -406,11 +448,19 @@ export default function ProductDetail() {
                     fullWidth
                     icon={Heart}
                     onClick={handleWishlist}
-                    className={isWishlisted ? '!border-red-300 !text-red-500' : ''}
+                    className={
+                      isWishlisted ? "!border-red-300 !text-red-500" : ""
+                    }
                   >
-                    {isWishlisted ? 'Saved' : 'Wishlist'}
+                    {isWishlisted ? "Saved" : "Wishlist"}
                   </Button>
                 </div>
+
+                <ShareButton
+                  title={product.title}
+                  price={formatPrice(product.price)}
+                  url={window.location.href}
+                />
 
                 <Button
                   variant="secondary"
@@ -425,7 +475,7 @@ export default function ProductDetail() {
               </div>
             )}
 
-            {product.status === 'sold' && (
+            {product.status === "sold" && (
               <div className="p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800/30 text-center">
                 <p className="text-red-600 dark:text-red-400 font-semibold">
                   This item has been sold
@@ -434,7 +484,9 @@ export default function ProductDetail() {
                   variant="outline"
                   size="sm"
                   className="mt-3"
-                  onClick={() => navigate('/marketplace?category=' + product.category)}
+                  onClick={() =>
+                    navigate("/marketplace?category=" + product.category)
+                  }
                 >
                   Find Similar
                 </Button>
@@ -509,6 +561,14 @@ export default function ProductDetail() {
           </div>
         )}
       </div>
+      <Lightbox
+        images={images}
+        initialIndex={lightboxIndex}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+      />
+
+      <RecentlyViewed />
     </PageWrapper>
   );
 }

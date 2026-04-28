@@ -46,6 +46,8 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const EditProduct = lazy(() => import("./pages/seller/EditProduct"));
 const SellerAnalytics = lazy(() => import("./pages/seller/SellerAnalytics"));
 const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const VerifyEmail = lazy(() => import("./pages/auth/VerifyEmail"));
+const ResetPassword = lazy(() => import("./pages/auth/ResetPassword"));
 
 const queryClient = createQueryClient();
 
@@ -77,6 +79,8 @@ const AppContent = () => {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* Protected */}
             <Route

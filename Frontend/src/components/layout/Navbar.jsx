@@ -1,16 +1,29 @@
-import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  ShoppingCart, Bell, Search, Menu, X, Sun, Moon,
-  User, LogOut, Settings, Package, Heart, LayoutDashboard,
-  Zap, ChevronDown,
-} from 'lucide-react';
-import { useAuthStore } from '../../store/auth.store';
-import { useCartStore } from '../../store/cart.store';
-import { useNotificationStore } from '../../store/notification.store';
-import { authApi } from '../../api/auth.api';
-import toast from 'react-hot-toast';
+  ShoppingCart,
+  Bell,
+  Search,
+  Menu,
+  X,
+  Sun,
+  Moon,
+  User,
+  LogOut,
+  Settings,
+  Package,
+  Heart,
+  LayoutDashboard,
+  Zap,
+  ChevronDown,
+} from "lucide-react";
+import { useAuthStore } from "../../store/auth.store";
+import { useCartStore } from "../../store/cart.store";
+import { useNotificationStore } from "../../store/notification.store";
+import { authApi } from "../../api/auth.api";
+import toast from "react-hot-toast";
+import { GlobalSearch } from "../shared/GlobalSearch";
 
 export const Navbar = ({ onThemeToggle, isDark }) => {
   const navigate = useNavigate();
@@ -23,12 +36,13 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
   const [profileOpen, setProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
   useEffect(() => {
@@ -39,10 +53,12 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
   const handleLogout = async () => {
     try {
       await authApi.logout();
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
     logout();
-    toast.success('Logged out successfully');
-    navigate('/');
+    toast.success("Logged out successfully");
+    navigate("/");
   };
 
   const handleSearch = (e) => {
@@ -50,34 +66,34 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
     if (searchQuery.trim()) {
       navigate(`/marketplace?q=${encodeURIComponent(searchQuery.trim())}`);
       setSearchOpen(false);
-      setSearchQuery('');
+      setSearchQuery("");
     }
   };
 
   const navLinks = [
-    { href: '/marketplace', label: 'Browse' },
-    ...(isAuthenticated ? [
-      { href: '/wishlist', label: 'Wishlist' },
-      { href: '/dashboard/orders', label: 'Orders' },
-    ] : []),
-    ...(user?.role === 'seller' || user?.role === 'admin' ? [
-      { href: '/seller', label: 'Sell' },
-    ] : []),
+    { href: "/marketplace", label: "Browse" },
+    ...(isAuthenticated
+      ? [
+          { href: "/wishlist", label: "Wishlist" },
+          { href: "/dashboard/orders", label: "Orders" },
+        ]
+      : []),
+    ...(user?.role === "seller" || user?.role === "admin"
+      ? [{ href: "/seller", label: "Sell" }]
+      : []),
   ];
 
   return (
     <>
-      <nav className={`
+      <nav
+        className={`
         fixed top-0 left-0 right-0 z-40
         transition-all duration-300
-        ${scrolled
-          ? 'glass shadow-lg shadow-black/5'
-          : 'bg-transparent'
-        }
-      `}>
+        ${scrolled ? "glass shadow-lg shadow-black/5" : "bg-transparent"}
+      `}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-
             {/* Logo */}
             <Link to="/" className="flex items-center gap-2 group">
               <motion.div
@@ -99,9 +115,10 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
                   to={link.href}
                   className={`
                     px-4 py-2 rounded-xl text-sm font-medium transition-all
-                    ${location.pathname.startsWith(link.href)
-                      ? 'bg-primary-50 dark:bg-primary-900/20 text-primary-600'
-                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    ${
+                      location.pathname.startsWith(link.href)
+                        ? "bg-primary-50 dark:bg-primary-900/20 text-primary-600"
+                        : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
                     }
                   `}
                 >
@@ -115,7 +132,7 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
               {/* Search */}
               <motion.button
                 whileTap={{ scale: 0.95 }}
-                onClick={() => setSearchOpen(true)}
+                onClick={() => setGlobalSearchOpen(true)}
                 className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
                 <Search className="w-5 h-5" />
@@ -127,7 +144,11 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
                 onClick={onThemeToggle}
                 className="p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               >
-                {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                {isDark ? (
+                  <Sun className="w-5 h-5" />
+                ) : (
+                  <Moon className="w-5 h-5" />
+                )}
               </motion.button>
 
               {isAuthenticated ? (
@@ -145,7 +166,7 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
                           animate={{ scale: 1 }}
                           className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
                         >
-                          {cartCount > 9 ? '9+' : cartCount}
+                          {cartCount > 9 ? "9+" : cartCount}
                         </motion.span>
                       )}
                     </motion.button>
@@ -164,7 +185,7 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
                           animate={{ scale: 1 }}
                           className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center"
                         >
-                          {unreadCount > 9 ? '9+' : unreadCount}
+                          {unreadCount > 9 ? "9+" : unreadCount}
                         </motion.span>
                       )}
                     </motion.button>
@@ -179,12 +200,18 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
                     >
                       <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
                         {user?.avatar?.url ? (
-                          <img src={user.avatar.url} alt="" className="w-full h-full rounded-xl object-cover" />
+                          <img
+                            src={user.avatar.url}
+                            alt=""
+                            className="w-full h-full rounded-xl object-cover"
+                          />
                         ) : (
                           user?.name?.[0]?.toUpperCase()
                         )}
                       </div>
-                      <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${profileOpen ? 'rotate-180' : ''}`} />
+                      <ChevronDown
+                        className={`w-4 h-4 text-slate-500 transition-transform ${profileOpen ? "rotate-180" : ""}`}
+                      />
                     </motion.button>
 
                     <AnimatePresence>
@@ -202,17 +229,41 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
                             <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                               {user?.name}
                             </p>
-                            <p className="text-xs text-slate-500 truncate">{user?.email}</p>
+                            <p className="text-xs text-slate-500 truncate">
+                              {user?.email}
+                            </p>
                           </div>
 
                           {[
-                            { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-                            { href: '/dashboard/orders', icon: Package, label: 'My Orders' },
-                            { href: '/wishlist', icon: Heart, label: 'Wishlist' },
-                            { href: '/dashboard/profile', icon: Settings, label: 'Settings' },
-                            ...(user?.role === 'admin' ? [
-                              { href: '/admin', icon: LayoutDashboard, label: 'Admin Panel' }
-                            ] : []),
+                            {
+                              href: "/dashboard",
+                              icon: LayoutDashboard,
+                              label: "Dashboard",
+                            },
+                            {
+                              href: "/dashboard/orders",
+                              icon: Package,
+                              label: "My Orders",
+                            },
+                            {
+                              href: "/wishlist",
+                              icon: Heart,
+                              label: "Wishlist",
+                            },
+                            {
+                              href: "/dashboard/profile",
+                              icon: Settings,
+                              label: "Settings",
+                            },
+                            ...(user?.role === "admin"
+                              ? [
+                                  {
+                                    href: "/admin",
+                                    icon: LayoutDashboard,
+                                    label: "Admin Panel",
+                                  },
+                                ]
+                              : []),
                           ].map((item) => (
                             <Link
                               key={item.href}
@@ -261,7 +312,11 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
                 onClick={() => setMobileOpen(!mobileOpen)}
                 className="md:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
               >
-                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                {mobileOpen ? (
+                  <X className="w-5 h-5" />
+                ) : (
+                  <Menu className="w-5 h-5" />
+                )}
               </motion.button>
             </div>
           </div>
@@ -272,7 +327,7 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
           {mobileOpen && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               className="md:hidden border-t border-slate-100 dark:border-slate-700/50 glass"
             >
@@ -335,6 +390,10 @@ export const Navbar = ({ onThemeToggle, isDark }) => {
           </motion.div>
         )}
       </AnimatePresence>
+      <GlobalSearch
+        isOpen={globalSearchOpen}
+        onClose={() => setGlobalSearchOpen(false)}
+      />
     </>
   );
 };
