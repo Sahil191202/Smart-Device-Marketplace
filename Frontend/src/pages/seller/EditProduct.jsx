@@ -1,40 +1,55 @@
-import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Save, ArrowLeft, Trash2, Upload, X,
-  Plus, Check, Eye, EyeOff, Zap,
-  AlertTriangle, Image as ImageIcon,
-  RefreshCw, Package,
-} from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+  Save,
+  ArrowLeft,
+  Trash2,
+  Upload,
+  X,
+  Plus,
+  Check,
+  Eye,
+  EyeOff,
+  Zap,
+  AlertTriangle,
+  Image as ImageIcon,
+  RefreshCw,
+  Package,
+} from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
-import { productsApi } from '../../api/products.api';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { Badge } from '../../components/ui/Badge';
-import { PageWrapper } from '../../components/layout/PageWrapper';
-import { DealScore } from '../../components/shared/DealScore';
-import { CATEGORIES, CONDITIONS } from '../../utils/constants';
-import { formatPrice, getConditionColor } from '../../utils/format';
+import { productsApi } from "../../api/products.api";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { Badge } from "../../components/ui/Badge";
+import { PageWrapper } from "../../components/layout/PageWrapper";
+import { DealScore } from "../../components/shared/DealScore";
+import { CATEGORIES, CONDITIONS } from "../../utils/constants";
+import { formatPrice, getConditionColor } from "../../utils/format";
 
 const editSchema = z.object({
-  title: z.string().min(10, 'Min 10 characters').max(150).optional(),
-  description: z.string().min(30, 'Min 30 characters').max(3000).optional(),
+  title: z.string().min(10, "Min 10 characters").max(150).optional(),
+  description: z.string().min(30, "Min 30 characters").max(3000).optional(),
   category: z.string().optional(),
   brand: z.string().max(50).optional(),
   model: z.string().max(100).optional(),
   condition: z.string().optional(),
-  price: z.number({ invalid_type_error: 'Enter a valid price' }).min(1).optional(),
-  status: z.enum(['active', 'draft', 'sold']).optional(),
-  location: z.object({
-    city: z.string().max(50).optional(),
-    state: z.string().max(50).optional(),
-  }).optional(),
+  price: z
+    .number({ invalid_type_error: "Enter a valid price" })
+    .min(1)
+    .optional(),
+  status: z.enum(["active", "draft", "sold"]).optional(),
+  location: z
+    .object({
+      city: z.string().max(50).optional(),
+      state: z.string().max(50).optional(),
+    })
+    .optional(),
 });
 
 // ── Image manager ─────────────────────────────────────────────────────────────
@@ -48,10 +63,11 @@ const ImageManager = ({ productId, images, onUpdate }) => {
     mutationFn: (formData) => productsApi.addImages(productId, formData),
     onSuccess: (res) => {
       onUpdate(res.data.data.product.images);
-      queryClient.invalidateQueries({ queryKey: ['product'] });
-      toast.success('Images added!');
+      queryClient.invalidateQueries({ queryKey: ["product"] });
+      toast.success("Images added!");
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Upload failed'),
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Upload failed"),
   });
 
   const { mutate: removeImage } = useMutation({
@@ -59,9 +75,9 @@ const ImageManager = ({ productId, images, onUpdate }) => {
     onMutate: (id) => setRemovingId(id),
     onSuccess: (res) => {
       onUpdate(res.data.data.product.images);
-      toast.success('Image removed');
+      toast.success("Image removed");
     },
-    onError: () => toast.error('Failed to remove image'),
+    onError: () => toast.error("Failed to remove image"),
     onSettled: () => setRemovingId(null),
   });
 
@@ -70,9 +86,9 @@ const ImageManager = ({ productId, images, onUpdate }) => {
     onMutate: (id) => setSettingPrimaryId(id),
     onSuccess: (res) => {
       onUpdate(res.data.data.product.images);
-      toast.success('Cover image updated');
+      toast.success("Cover image updated");
     },
-    onError: () => toast.error('Failed to set cover'),
+    onError: () => toast.error("Failed to set cover"),
     onSettled: () => setSettingPrimaryId(null),
   });
 
@@ -81,14 +97,14 @@ const ImageManager = ({ productId, images, onUpdate }) => {
     if (!files.length) return;
 
     if (images.length + files.length > 5) {
-      toast.error('Maximum 5 images allowed');
+      toast.error("Maximum 5 images allowed");
       return;
     }
 
     const formData = new FormData();
-    files.forEach((file) => formData.append('images', file));
+    files.forEach((file) => formData.append("images", file));
     addImages(formData);
-    e.target.value = '';
+    e.target.value = "";
   };
 
   return (
@@ -127,7 +143,9 @@ const ImageManager = ({ productId, images, onUpdate }) => {
           className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center cursor-pointer hover:border-primary-300 transition-colors"
         >
           <Upload className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-          <p className="text-sm text-slate-500 dark:text-slate-400">Upload product images</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Upload product images
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-5 gap-3">
@@ -145,8 +163,8 @@ const ImageManager = ({ productId, images, onUpdate }) => {
                   alt=""
                   className={`w-full h-full object-cover rounded-xl border-2 transition-all ${
                     img.isPrimary
-                      ? 'border-primary-500 shadow-md'
-                      : 'border-transparent'
+                      ? "border-primary-500 shadow-md"
+                      : "border-transparent"
                   }`}
                 />
 
@@ -164,10 +182,11 @@ const ImageManager = ({ productId, images, onUpdate }) => {
                       className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center text-white hover:bg-white/30"
                       title="Set as cover"
                     >
-                      {settingPrimaryId === img._id
-                        ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                        : <Check className="w-3.5 h-3.5" />
-                      }
+                      {settingPrimaryId === img._id ? (
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Check className="w-3.5 h-3.5" />
+                      )}
                     </button>
                   )}
                   <button
@@ -176,10 +195,11 @@ const ImageManager = ({ productId, images, onUpdate }) => {
                     className="w-7 h-7 rounded-lg bg-red-500/80 flex items-center justify-center text-white hover:bg-red-500 disabled:opacity-40"
                     title="Remove"
                   >
-                    {removingId === img._id
-                      ? <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                      : <Trash2 className="w-3.5 h-3.5" />
-                    }
+                    {removingId === img._id ? (
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-3.5 h-3.5" />
+                    )}
                   </button>
                 </div>
               </motion.div>
@@ -210,31 +230,33 @@ export default function EditProduct() {
 
   // Fetch product
   const { data: productData, isLoading } = useQuery({
-    queryKey: ['product', 'edit', id],
+    queryKey: ["product", "edit", id],
     queryFn: () => productsApi.getById(id),
-    onSuccess: (res) => {
-      const p = res.data.data.product;
-      setImages(p.images || []);
-      setSpecs(p.specs || {});
-      reset({
-        title: p.title,
-        description: p.description,
-        category: p.category,
-        brand: p.brand,
-        model: p.model || '',
-        condition: p.condition,
-        price: p.price,
-        status: p.status,
-        location: p.location || { city: '', state: '' },
-      });
-    },
   });
 
   const product = productData?.data?.data?.product;
 
+  useEffect(() => {
+    if (product) {
+      setImages(product.images || []);
+      setSpecs(product.specs || {});
+      reset({
+        title: product.title,
+        description: product.description,
+        category: product.category,
+        brand: product.brand,
+        model: product.model || "",
+        condition: product.condition,
+        price: product.price,
+        status: product.status,
+        location: product.location || { city: "", state: "" },
+      });
+    }
+  }, [product]);
+
   // Fetch AI analysis
   const { data: analysisData, isLoading: analysisLoading } = useQuery({
-    queryKey: ['priceAnalysis', id],
+    queryKey: ["priceAnalysis", id],
     queryFn: () => productsApi.getPriceAnalysis(id),
     enabled: !!id,
     staleTime: 1000 * 60 * 30,
@@ -257,22 +279,24 @@ export default function EditProduct() {
   const { mutate: updateProduct, isPending: updating } = useMutation({
     mutationFn: (data) => productsApi.update(id, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['product'] });
-      queryClient.invalidateQueries({ queryKey: ['seller', 'listings'] });
-      toast.success('Listing updated!');
-      navigate('/seller');
+      queryClient.invalidateQueries({ queryKey: ["product"] });
+      queryClient.invalidateQueries({ queryKey: ["seller", "listings"] });
+      toast.success("Listing updated!");
+      navigate("/seller");
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Update failed'),
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Update failed"),
   });
 
   // Delete product
   const { mutate: deleteProduct, isPending: deleting } = useMutation({
     mutationFn: () => productsApi.delete(id),
     onSuccess: () => {
-      toast.success('Listing removed');
-      navigate('/seller');
+      toast.success("Listing removed");
+      navigate("/seller");
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to remove'),
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to remove"),
   });
 
   const onSubmit = (data) => {
@@ -300,7 +324,7 @@ export default function EditProduct() {
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">
             Product not found
           </h2>
-          <Button onClick={() => navigate('/seller')} icon={ArrowLeft}>
+          <Button onClick={() => navigate("/seller")} icon={ArrowLeft}>
             Back to Dashboard
           </Button>
         </div>
@@ -311,12 +335,11 @@ export default function EditProduct() {
   return (
     <PageWrapper>
       <div className="container-page py-8 pb-20 max-w-3xl mx-auto">
-
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate('/seller')}
+              onClick={() => navigate("/seller")}
               className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -346,7 +369,9 @@ export default function EditProduct() {
               loading={deleting}
               className="!text-red-500 hover:!bg-red-50 dark:hover:!bg-red-900/20"
               onClick={() => {
-                if (window.confirm('Remove this listing? This cannot be undone.')) {
+                if (
+                  window.confirm("Remove this listing? This cannot be undone.")
+                ) {
                   deleteProduct();
                 }
               }}
@@ -357,7 +382,6 @@ export default function EditProduct() {
         </div>
 
         <div className="space-y-6">
-
           {/* AI Price Analysis */}
           <DealScore analysis={analysis} loading={analysisLoading} />
 
@@ -373,17 +397,19 @@ export default function EditProduct() {
                 </p>
               </div>
               <div className="flex gap-2">
-                {['active', 'draft', 'sold'].map((s) => (
+                {["active", "draft", "sold"].map((s) => (
                   <button
                     key={s}
                     type="button"
-                    onClick={() => setValue('status', s, { shouldDirty: true })}
+                    onClick={() => setValue("status", s, { shouldDirty: true })}
                     className={`px-3 py-1.5 rounded-xl text-xs font-semibold capitalize border transition-all ${
-                      watch('status') === s
-                        ? s === 'active' ? 'bg-green-500 text-white border-green-500'
-                          : s === 'draft' ? 'bg-yellow-500 text-white border-yellow-500'
-                          : 'bg-slate-500 text-white border-slate-500'
-                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                      watch("status") === s
+                        ? s === "active"
+                          ? "bg-green-500 text-white border-green-500"
+                          : s === "draft"
+                            ? "bg-yellow-500 text-white border-yellow-500"
+                            : "bg-slate-500 text-white border-slate-500"
+                        : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
                     }`}
                   >
                     {s}
@@ -394,7 +420,10 @@ export default function EditProduct() {
           </div>
 
           {/* Main form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="card p-5 space-y-5">
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="card p-5 space-y-5"
+          >
             <h2 className="font-bold text-slate-900 dark:text-white">
               Product Details
             </h2>
@@ -402,7 +431,7 @@ export default function EditProduct() {
             <Input
               label="Title"
               error={errors.title?.message}
-              {...register('title')}
+              {...register("title")}
             />
 
             <div>
@@ -411,11 +440,13 @@ export default function EditProduct() {
               </label>
               <textarea
                 rows={4}
-                className={`input-base resize-none ${errors.description ? 'border-red-400' : ''}`}
-                {...register('description')}
+                className={`input-base resize-none ${errors.description ? "border-red-400" : ""}`}
+                {...register("description")}
               />
               {errors.description && (
-                <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.description.message}
+                </p>
               )}
             </div>
 
@@ -429,11 +460,13 @@ export default function EditProduct() {
                   <button
                     key={cat.value}
                     type="button"
-                    onClick={() => setValue('category', cat.value, { shouldDirty: true })}
+                    onClick={() =>
+                      setValue("category", cat.value, { shouldDirty: true })
+                    }
                     className={`p-2 rounded-xl border text-center text-xs transition-all ${
-                      watch('category') === cat.value
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 font-medium'
-                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                      watch("category") === cat.value
+                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 font-medium"
+                        : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
                     }`}
                   >
                     <div className="text-lg mb-0.5">{cat.icon}</div>
@@ -453,11 +486,13 @@ export default function EditProduct() {
                   <button
                     key={cond.value}
                     type="button"
-                    onClick={() => setValue('condition', cond.value, { shouldDirty: true })}
+                    onClick={() =>
+                      setValue("condition", cond.value, { shouldDirty: true })
+                    }
                     className={`px-4 py-2 rounded-xl border text-sm font-medium transition-all ${
-                      watch('condition') === cond.value
-                        ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400'
-                        : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300'
+                      watch("condition") === cond.value
+                        ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400"
+                        : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
                     }`}
                   >
                     {cond.label}
@@ -471,12 +506,9 @@ export default function EditProduct() {
               <Input
                 label="Brand"
                 error={errors.brand?.message}
-                {...register('brand')}
+                {...register("brand")}
               />
-              <Input
-                label="Model (optional)"
-                {...register('model')}
-              />
+              <Input label="Model (optional)" {...register("model")} />
             </div>
 
             {/* Price */}
@@ -485,15 +517,19 @@ export default function EditProduct() {
                 Asking Price (₹)
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">₹</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">
+                  ₹
+                </span>
                 <input
                   type="number"
-                  className={`input-base pl-7 ${errors.price ? 'border-red-400' : ''}`}
-                  {...register('price', { valueAsNumber: true })}
+                  className={`input-base pl-7 ${errors.price ? "border-red-400" : ""}`}
+                  {...register("price", { valueAsNumber: true })}
                 />
               </div>
               {errors.price && (
-                <p className="text-xs text-red-500 mt-1">{errors.price.message}</p>
+                <p className="text-xs text-red-500 mt-1">
+                  {errors.price.message}
+                </p>
               )}
               {analysis?.predicted_price && (
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex items-center gap-1.5">
@@ -505,14 +541,8 @@ export default function EditProduct() {
 
             {/* Location */}
             <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="City (optional)"
-                {...register('location.city')}
-              />
-              <Input
-                label="State (optional)"
-                {...register('location.state')}
-              />
+              <Input label="City (optional)" {...register("location.city")} />
+              <Input label="State (optional)" {...register("location.state")} />
             </div>
 
             {/* Specs */}
@@ -522,9 +552,16 @@ export default function EditProduct() {
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {Object.entries(specs).map(([k, v]) => (
-                  <div key={k} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 group text-sm">
-                    <span className="text-slate-500 capitalize">{k.replace(/_/g, ' ')}: </span>
-                    <span className="font-medium text-slate-900 dark:text-white">{String(v)}</span>
+                  <div
+                    key={k}
+                    className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 group text-sm"
+                  >
+                    <span className="text-slate-500 capitalize">
+                      {k.replace(/_/g, " ")}:{" "}
+                    </span>
+                    <span className="font-medium text-slate-900 dark:text-white">
+                      {String(v)}
+                    </span>
                     <button
                       type="button"
                       onClick={() => {
@@ -543,7 +580,12 @@ export default function EditProduct() {
 
             {/* Submit */}
             <div className="flex gap-3 pt-2">
-              <Button variant="outline" fullWidth onClick={() => navigate('/seller')} type="button">
+              <Button
+                variant="outline"
+                fullWidth
+                onClick={() => navigate("/seller")}
+                type="button"
+              >
                 Cancel
               </Button>
               <Button
@@ -559,11 +601,7 @@ export default function EditProduct() {
           </form>
 
           {/* Image manager */}
-          <ImageManager
-            productId={id}
-            images={images}
-            onUpdate={setImages}
-          />
+          <ImageManager productId={id} images={images} onUpdate={setImages} />
         </div>
       </div>
     </PageWrapper>

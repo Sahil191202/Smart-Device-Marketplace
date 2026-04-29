@@ -1,47 +1,62 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useForm, useFieldArray } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Upload, X, Plus, Check, ChevronRight,
-  ChevronLeft, Package, Image as ImageIcon,
-  Settings, Eye, Zap, Trash2, GripVertical,
-} from 'lucide-react';
-import { useMutation } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+  Upload,
+  X,
+  Plus,
+  Check,
+  ChevronRight,
+  ChevronLeft,
+  Package,
+  Image as ImageIcon,
+  Settings,
+  Eye,
+  Zap,
+  Trash2,
+  GripVertical,
+} from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
-import { productsApi } from '../../api/products.api';
-import { Button } from '../../components/ui/Button';
-import { Input } from '../../components/ui/Input';
-import { PageWrapper } from '../../components/layout/PageWrapper';
-import { Badge } from '../../components/ui/Badge';
-import { CATEGORIES, CONDITIONS } from '../../utils/constants';
-import { formatPrice, getConditionColor } from '../../utils/format';
+import { productsApi } from "../../api/products.api";
+import { Button } from "../../components/ui/Button";
+import { Input } from "../../components/ui/Input";
+import { PageWrapper } from "../../components/layout/PageWrapper";
+import { Badge } from "../../components/ui/Badge";
+import { CATEGORIES, CONDITIONS } from "../../utils/constants";
+import { formatPrice, getConditionColor } from "../../utils/format";
 
 // ── Validation schema ─────────────────────────────────────────────────────────
 const createSchema = z.object({
-  title: z.string().min(10, 'Minimum 10 characters').max(150),
-  description: z.string().min(30, 'Minimum 30 characters').max(3000),
-  category: z.string().min(1, 'Select a category'),
-  brand: z.string().min(1, 'Brand required').max(50),
+  title: z.string().min(10, "Minimum 10 characters").max(150),
+  description: z.string().min(30, "Minimum 30 characters").max(3000),
+  category: z.string().min(1, "Select a category"),
+  brand: z.string().min(1, "Brand required").max(50),
   model: z.string().max(100).optional(),
-  condition: z.string().min(1, 'Select condition'),
-  price: z.number({ invalid_type_error: 'Enter a valid price' }).min(1).max(10000000),
-  location: z.object({
-    city: z.string().max(50).optional(),
-    state: z.string().max(50).optional(),
-  }).optional(),
-  status: z.enum(['active', 'draft']).default('active'),
+  condition: z.string().min(1, "Select condition"),
+  price: z
+    .number({ invalid_type_error: "Enter a valid price" })
+    .min(1)
+    .max(10000000),
+  location: z
+    .object({
+      city: z.string().max(50).optional(),
+      state: z.string().max(50).optional(),
+    })
+    .optional(),
+  status: z.enum(["active", "draft"]).default("active"),
 });
 
 // ── Steps ─────────────────────────────────────────────────────────────────────
 const STEPS = [
-  { id: 1, label: 'Details', icon: Package },
-  { id: 2, label: 'Images', icon: ImageIcon },
-  { id: 3, label: 'Specs', icon: Settings },
-  { id: 4, label: 'Preview', icon: Eye },
+  { id: 1, label: "Details", icon: Package },
+  { id: 2, label: "Images", icon: ImageIcon },
+  { id: 3, label: "Specs", icon: Settings },
+  { id: 4, label: "Preview", icon: Eye },
 ];
 
 // ── Step indicator ────────────────────────────────────────────────────────────
@@ -56,7 +71,7 @@ const StepBar = ({ currentStep }) => (
           <div className="flex flex-col items-center">
             <motion.div
               animate={{
-                backgroundColor: isDone || isActive ? '#2563eb' : '#f1f5f9',
+                backgroundColor: isDone || isActive ? "#2563eb" : "#f1f5f9",
                 scale: isActive ? 1.1 : 1,
               }}
               className="w-9 h-9 rounded-full flex items-center justify-center shadow-sm"
@@ -64,15 +79,21 @@ const StepBar = ({ currentStep }) => (
               {isDone ? (
                 <Check className="w-4 h-4 text-white" />
               ) : (
-                <step.icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400'}`} />
+                <step.icon
+                  className={`w-4 h-4 ${isActive ? "text-white" : "text-slate-400"}`}
+                />
               )}
             </motion.div>
-            <span className={`text-xs mt-1.5 font-medium ${isActive || isDone ? 'text-primary-600' : 'text-slate-400'}`}>
+            <span
+              className={`text-xs mt-1.5 font-medium ${isActive || isDone ? "text-primary-600" : "text-slate-400"}`}
+            >
               {step.label}
             </span>
           </div>
           {i < STEPS.length - 1 && (
-            <div className={`w-16 h-0.5 mx-1 mb-5 transition-all duration-500 ${isDone ? 'bg-primary-600' : 'bg-slate-200 dark:bg-slate-700'}`} />
+            <div
+              className={`w-16 h-0.5 mx-1 mb-5 transition-all duration-500 ${isDone ? "bg-primary-600" : "bg-slate-200 dark:bg-slate-700"}`}
+            />
           )}
         </div>
       );
@@ -91,7 +112,7 @@ const ImageUploader = ({ images, onAdd, onRemove, onSetPrimary }) => {
         toast.error(`${f.name}: Max size is 5MB`);
         return false;
       }
-      if (!['image/jpeg', 'image/png', 'image/webp'].includes(f.type)) {
+      if (!["image/jpeg", "image/png", "image/webp"].includes(f.type)) {
         toast.error(`${f.name}: Only JPG, PNG, WebP allowed`);
         return false;
       }
@@ -99,7 +120,7 @@ const ImageUploader = ({ images, onAdd, onRemove, onSetPrimary }) => {
     });
 
     if (images.length + validFiles.length > 5) {
-      toast.error('Maximum 5 images allowed');
+      toast.error("Maximum 5 images allowed");
       return;
     }
 
@@ -122,17 +143,21 @@ const ImageUploader = ({ images, onAdd, onRemove, onSetPrimary }) => {
     <div className="space-y-4">
       {/* Drop zone */}
       <div
-        onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
         onDragLeave={() => setDragging(false)}
         onDrop={handleDrop}
         onClick={() => fileInputRef.current?.click()}
         className={`
           border-2 border-dashed rounded-2xl p-8 text-center cursor-pointer transition-all duration-200
-          ${dragging
-            ? 'border-primary-400 bg-primary-50 dark:bg-primary-900/20'
-            : 'border-slate-200 dark:border-slate-700 hover:border-primary-300 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+          ${
+            dragging
+              ? "border-primary-400 bg-primary-50 dark:bg-primary-900/20"
+              : "border-slate-200 dark:border-slate-700 hover:border-primary-300 hover:bg-slate-50 dark:hover:bg-slate-800/50"
           }
-          ${images.length >= 5 ? 'opacity-50 pointer-events-none' : ''}
+          ${images.length >= 5 ? "opacity-50 pointer-events-none" : ""}
         `}
       >
         <input
@@ -143,9 +168,11 @@ const ImageUploader = ({ images, onAdd, onRemove, onSetPrimary }) => {
           onChange={(e) => handleFiles(e.target.files)}
           className="hidden"
         />
-        <Upload className={`w-10 h-10 mx-auto mb-3 ${dragging ? 'text-primary-500' : 'text-slate-300'}`} />
+        <Upload
+          className={`w-10 h-10 mx-auto mb-3 ${dragging ? "text-primary-500" : "text-slate-300"}`}
+        />
         <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
-          {dragging ? 'Drop images here' : 'Drop images or click to upload'}
+          {dragging ? "Drop images here" : "Drop images or click to upload"}
         </p>
         <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
           JPG, PNG, WebP • Max 5MB each • Up to 5 images
@@ -169,8 +196,8 @@ const ImageUploader = ({ images, onAdd, onRemove, onSetPrimary }) => {
                   alt=""
                   className={`w-full h-full object-cover rounded-xl border-2 transition-all ${
                     img.isPrimary
-                      ? 'border-primary-500 shadow-md'
-                      : 'border-transparent'
+                      ? "border-primary-500 shadow-md"
+                      : "border-transparent"
                   }`}
                 />
 
@@ -227,23 +254,23 @@ const ImageUploader = ({ images, onAdd, onRemove, onSetPrimary }) => {
 
 // ── Specs builder ─────────────────────────────────────────────────────────────
 const SpecsBuilder = ({ specs, onChange }) => {
-  const [key, setKey] = useState('');
-  const [value, setValue] = useState('');
+  const [key, setKey] = useState("");
+  const [value, setValue] = useState("");
 
   const QUICK_SPECS = [
-    { key: 'ram_gb', label: 'RAM (GB)', placeholder: '8' },
-    { key: 'storage_gb', label: 'Storage (GB)', placeholder: '256' },
-    { key: 'battery_mah', label: 'Battery (mAh)', placeholder: '5000' },
-    { key: 'display_inch', label: 'Display (inch)', placeholder: '6.7' },
-    { key: 'age_months', label: 'Age (months)', placeholder: '6' },
-    { key: 'processor', label: 'Processor', placeholder: 'Snapdragon 8 Gen 2' },
+    { key: "ram_gb", label: "RAM (GB)", placeholder: "8" },
+    { key: "storage_gb", label: "Storage (GB)", placeholder: "256" },
+    { key: "battery_mah", label: "Battery (mAh)", placeholder: "5000" },
+    { key: "display_inch", label: "Display (inch)", placeholder: "6.7" },
+    { key: "age_months", label: "Age (months)", placeholder: "6" },
+    { key: "processor", label: "Processor", placeholder: "Snapdragon 8 Gen 2" },
   ];
 
   const addSpec = (k, v) => {
     if (!k || !v) return;
     onChange({ ...specs, [k]: v });
-    setKey('');
-    setValue('');
+    setKey("");
+    setValue("");
   };
 
   const removeSpec = (k) => {
@@ -270,12 +297,12 @@ const SpecsBuilder = ({ specs, onChange }) => {
               type="button"
               onClick={() => {
                 setKey(spec.key);
-                setValue('');
+                setValue("");
               }}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-all ${
                 key === spec.key
-                  ? 'bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-400'
-                  : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300'
+                  ? "bg-primary-50 dark:bg-primary-900/20 border-primary-300 dark:border-primary-700 text-primary-700 dark:text-primary-400"
+                  : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300"
               }`}
             >
               + {spec.label}
@@ -296,7 +323,7 @@ const SpecsBuilder = ({ specs, onChange }) => {
           placeholder="Value"
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && addSpec(key, value)}
+          onKeyDown={(e) => e.key === "Enter" && addSpec(key, value)}
           className="input-base text-sm flex-1"
         />
         <Button
@@ -324,7 +351,7 @@ const SpecsBuilder = ({ specs, onChange }) => {
               >
                 <div className="min-w-0 mr-2">
                   <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
-                    {k.replace(/_/g, ' ')}
+                    {k.replace(/_/g, " ")}
                   </p>
                   <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                     {String(v)}
@@ -348,7 +375,8 @@ const SpecsBuilder = ({ specs, onChange }) => {
 
 // ── Product preview card ──────────────────────────────────────────────────────
 const PreviewCard = ({ formData, images }) => {
-  const primaryPreview = images.find((i) => i.isPrimary)?.preview || images[0]?.preview;
+  const primaryPreview =
+    images.find((i) => i.isPrimary)?.preview || images[0]?.preview;
 
   return (
     <div className="space-y-4">
@@ -359,7 +387,11 @@ const PreviewCard = ({ formData, images }) => {
       <div className="max-w-xs mx-auto card overflow-hidden">
         <div className="aspect-square bg-slate-100 dark:bg-slate-800 overflow-hidden">
           {primaryPreview ? (
-            <img src={primaryPreview} alt="" className="w-full h-full object-cover" />
+            <img
+              src={primaryPreview}
+              alt=""
+              className="w-full h-full object-cover"
+            />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center gap-2">
               <Package className="w-12 h-12 text-slate-300" />
@@ -371,19 +403,21 @@ const PreviewCard = ({ formData, images }) => {
         <div className="p-4">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-medium text-slate-500 uppercase">
-              {formData.brand || 'Brand'}
+              {formData.brand || "Brand"}
             </span>
             {formData.condition && (
-              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${getConditionColor(formData.condition)}`}>
+              <span
+                className={`px-2 py-0.5 rounded-full text-xs font-medium ${getConditionColor(formData.condition)}`}
+              >
                 {formData.condition}
               </span>
             )}
           </div>
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white line-clamp-2 mb-2">
-            {formData.title || 'Product Title'}
+            {formData.title || "Product Title"}
           </h3>
           <p className="text-lg font-bold text-primary-600">
-            {formData.price ? formatPrice(formData.price) : '₹0'}
+            {formData.price ? formatPrice(formData.price) : "₹0"}
           </p>
           {formData.location?.city && (
             <p className="text-xs text-slate-400 mt-1">
@@ -400,12 +434,18 @@ const PreviewCard = ({ formData, images }) => {
             Specifications
           </p>
           <div className="grid grid-cols-2 gap-1.5">
-            {Object.entries(formData.specs).slice(0, 6).map(([k, v]) => (
-              <div key={k} className="text-xs">
-                <span className="text-slate-400 capitalize">{k.replace(/_/g, ' ')}: </span>
-                <span className="font-medium text-slate-700 dark:text-slate-300">{v}</span>
-              </div>
-            ))}
+            {Object.entries(formData.specs)
+              .slice(0, 6)
+              .map(([k, v]) => (
+                <div key={k} className="text-xs">
+                  <span className="text-slate-400 capitalize">
+                    {k.replace(/_/g, " ")}:{" "}
+                  </span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                    {v}
+                  </span>
+                </div>
+              ))}
           </div>
         </div>
       )}
@@ -438,49 +478,57 @@ export default function CreateProduct() {
   } = useForm({
     resolver: zodResolver(createSchema),
     defaultValues: {
-      status: 'active',
-      location: { city: '', state: '' },
+      status: "active",
+      location: { city: "", state: "" },
     },
   });
 
   const formData = watch();
 
   // ── Create product mutation ───────────────────────────────────────────────
+  // Replace the entire mutationFn in CreateProduct.jsx:
   const { mutate: createProduct, isPending } = useMutation({
     mutationFn: async (data) => {
-      const formDataPayload = new FormData();
+      // Step 1: Create product with JSON (no images)
+      const payload = {
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        brand: data.brand,
+        model: data.model || undefined,
+        condition: data.condition,
+        price: data.price,
+        status: data.status || "active",
+        specs: Object.keys(specs).length > 0 ? specs : undefined,
+        location: data.location?.city
+          ? { city: data.location.city, state: data.location.state || "" }
+          : undefined,
+      };
 
-      // Append text fields
-      Object.entries(data).forEach(([key, value]) => {
-        if (key === 'location') {
-          if (value?.city) formDataPayload.append('location[city]', value.city);
-          if (value?.state) formDataPayload.append('location[state]', value.state);
-        } else if (key === 'specs') {
-          formDataPayload.append('specs', JSON.stringify(value));
-        } else if (value !== undefined && value !== '') {
-          formDataPayload.append(key, String(value));
-        }
-      });
+      const productRes = await productsApi.create(payload);
+      const productId = productRes.data.data.product._id;
 
-      // Append specs separately
-      if (Object.keys(specs).length > 0) {
-        formDataPayload.set('specs', JSON.stringify(specs));
+      // Step 2: Upload images separately (if any)
+      if (images.length > 0) {
+        const formData = new FormData();
+        images.forEach((img) => formData.append("images", img.file));
+        await productsApi.addImages(productId, formData);
       }
 
-      // Append images
-      images.forEach((img) => {
-        formDataPayload.append('images', img.file);
-      });
-
-      return productsApi.create(formDataPayload);
+      return productRes;
     },
-    onSuccess: (res) => {
-      toast.success('Listing created! AI price analysis in progress...');
-      navigate('/seller');
+    onSuccess: () => {
+      toast.success("Listing created! AI price analysis in progress...");
+      navigate("/seller");
     },
     onError: (err) => {
-      const msg = err.response?.data?.message || 'Failed to create listing';
-      toast.error(msg);
+      const msg = err.response?.data?.message || "Failed to create listing";
+      const errors = err.response?.data?.errors;
+      if (errors?.length) {
+        errors.forEach((e) => toast.error(`${e.field}: ${e.message}`));
+      } else {
+        toast.error(msg);
+      }
     },
   });
 
@@ -488,7 +536,14 @@ export default function CreateProduct() {
     let fieldsToValidate = [];
 
     if (currentStep === 1) {
-      fieldsToValidate = ['title', 'description', 'category', 'brand', 'condition', 'price'];
+      fieldsToValidate = [
+        "title",
+        "description",
+        "category",
+        "brand",
+        "condition",
+        "price",
+      ];
     }
 
     const valid = await trigger(fieldsToValidate);
@@ -521,7 +576,7 @@ export default function CreateProduct() {
 
   const handleSetPrimary = (index) => {
     setImages((prev) =>
-      prev.map((img, i) => ({ ...img, isPrimary: i === index }))
+      prev.map((img, i) => ({ ...img, isPrimary: i === index })),
     );
   };
 
@@ -532,7 +587,6 @@ export default function CreateProduct() {
   return (
     <PageWrapper>
       <div className="container-page py-8 pb-20 max-w-3xl mx-auto">
-
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -543,10 +597,7 @@ export default function CreateProduct() {
               List your device and get AI-powered price insights
             </p>
           </div>
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/seller')}
-          >
+          <Button variant="ghost" onClick={() => navigate("/seller")}>
             Cancel
           </Button>
         </div>
@@ -556,7 +607,6 @@ export default function CreateProduct() {
 
         <div className="card p-6">
           <AnimatePresence mode="wait">
-
             {/* ── Step 1: Details ─────────────────────────────────────────── */}
             {currentStep === 1 && (
               <motion.div
@@ -576,7 +626,7 @@ export default function CreateProduct() {
                   error={errors.title?.message}
                   required
                   hint="Be specific — include brand, model, storage, color"
-                  {...register('title')}
+                  {...register("title")}
                 />
 
                 <div>
@@ -586,17 +636,21 @@ export default function CreateProduct() {
                   <textarea
                     placeholder="Describe the device condition, accessories included, reason for selling..."
                     rows={4}
-                    className={`input-base resize-none ${errors.description ? 'border-red-400' : ''}`}
-                    {...register('description')}
+                    className={`input-base resize-none ${errors.description ? "border-red-400" : ""}`}
+                    {...register("description")}
                   />
                   <div className="flex items-center justify-between mt-1">
                     {errors.description ? (
-                      <p className="text-xs text-red-500">{errors.description.message}</p>
+                      <p className="text-xs text-red-500">
+                        {errors.description.message}
+                      </p>
                     ) : (
-                      <p className="text-xs text-slate-400">Min 30 characters</p>
+                      <p className="text-xs text-slate-400">
+                        Min 30 characters
+                      </p>
                     )}
                     <p className="text-xs text-slate-400">
-                      {watch('description')?.length || 0}/3000
+                      {watch("description")?.length || 0}/3000
                     </p>
                   </div>
                 </div>
@@ -611,26 +665,34 @@ export default function CreateProduct() {
                       <button
                         key={cat.value}
                         type="button"
-                        onClick={() => setValue('category', cat.value, { shouldValidate: true })}
+                        onClick={() =>
+                          setValue("category", cat.value, {
+                            shouldValidate: true,
+                          })
+                        }
                         className={`p-2.5 rounded-xl border text-center transition-all ${
-                          watch('category') === cat.value
-                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                          watch("category") === cat.value
+                            ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
+                            : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
                         }`}
                       >
                         <div className="text-xl mb-1">{cat.icon}</div>
-                        <p className={`text-[10px] font-medium leading-tight ${
-                          watch('category') === cat.value
-                            ? 'text-primary-700 dark:text-primary-400'
-                            : 'text-slate-600 dark:text-slate-300'
-                        }`}>
+                        <p
+                          className={`text-[10px] font-medium leading-tight ${
+                            watch("category") === cat.value
+                              ? "text-primary-700 dark:text-primary-400"
+                              : "text-slate-600 dark:text-slate-300"
+                          }`}
+                        >
                           {cat.label}
                         </p>
                       </button>
                     ))}
                   </div>
                   {errors.category && (
-                    <p className="text-xs text-red-500 mt-1">{errors.category.message}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.category.message}
+                    </p>
                   )}
                 </div>
 
@@ -641,12 +703,12 @@ export default function CreateProduct() {
                     placeholder="Apple, Samsung, Sony..."
                     error={errors.brand?.message}
                     required
-                    {...register('brand')}
+                    {...register("brand")}
                   />
                   <Input
                     label="Model (optional)"
                     placeholder="e.g. A2894"
-                    {...register('model')}
+                    {...register("model")}
                   />
                 </div>
 
@@ -660,25 +722,33 @@ export default function CreateProduct() {
                       <button
                         key={cond.value}
                         type="button"
-                        onClick={() => setValue('condition', cond.value, { shouldValidate: true })}
+                        onClick={() =>
+                          setValue("condition", cond.value, {
+                            shouldValidate: true,
+                          })
+                        }
                         className={`p-2.5 rounded-xl border text-center transition-all ${
-                          watch('condition') === cond.value
-                            ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20'
-                            : 'border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                          watch("condition") === cond.value
+                            ? "border-primary-500 bg-primary-50 dark:bg-primary-900/20"
+                            : "border-slate-200 dark:border-slate-700 hover:border-slate-300"
                         }`}
                       >
-                        <p className={`text-xs font-semibold ${
-                          watch('condition') === cond.value
-                            ? 'text-primary-700 dark:text-primary-400'
-                            : 'text-slate-600 dark:text-slate-300'
-                        }`}>
+                        <p
+                          className={`text-xs font-semibold ${
+                            watch("condition") === cond.value
+                              ? "text-primary-700 dark:text-primary-400"
+                              : "text-slate-600 dark:text-slate-300"
+                          }`}
+                        >
                           {cond.label}
                         </p>
                       </button>
                     ))}
                   </div>
                   {errors.condition && (
-                    <p className="text-xs text-red-500 mt-1">{errors.condition.message}</p>
+                    <p className="text-xs text-red-500 mt-1">
+                      {errors.condition.message}
+                    </p>
                   )}
                 </div>
 
@@ -689,16 +759,20 @@ export default function CreateProduct() {
                       Asking Price (₹) <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">₹</span>
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-medium text-sm">
+                        ₹
+                      </span>
                       <input
                         type="number"
                         placeholder="25000"
-                        className={`input-base pl-7 ${errors.price ? 'border-red-400' : ''}`}
-                        {...register('price', { valueAsNumber: true })}
+                        className={`input-base pl-7 ${errors.price ? "border-red-400" : ""}`}
+                        {...register("price", { valueAsNumber: true })}
                       />
                     </div>
                     {errors.price && (
-                      <p className="text-xs text-red-500 mt-1">{errors.price.message}</p>
+                      <p className="text-xs text-red-500 mt-1">
+                        {errors.price.message}
+                      </p>
                     )}
                   </div>
 
@@ -706,7 +780,14 @@ export default function CreateProduct() {
                     <Input
                       label="City (optional)"
                       placeholder="Mumbai"
-                      {...register('location.city')}
+                      {...register("location.city")}
+                    />
+                  </div>
+                  <div className="space-y-3">
+                    <Input
+                      label="State (optional)"
+                      placeholder="Maharashtra"
+                      {...register("location.state")}
                     />
                   </div>
                 </div>
@@ -723,16 +804,23 @@ export default function CreateProduct() {
                   </div>
                   <button
                     type="button"
-                    onClick={() => setValue('status', watch('status') === 'active' ? 'draft' : 'active')}
+                    onClick={() =>
+                      setValue(
+                        "status",
+                        watch("status") === "active" ? "draft" : "active",
+                      )
+                    }
                     className={`w-12 h-6 rounded-full transition-all duration-300 ${
-                      watch('status') === 'active'
-                        ? 'bg-primary-600'
-                        : 'bg-slate-300 dark:bg-slate-600'
+                      watch("status") === "active"
+                        ? "bg-primary-600"
+                        : "bg-slate-300 dark:bg-slate-600"
                     } relative`}
                   >
-                    <div className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-300 ${
-                      watch('status') === 'active' ? 'left-6' : 'left-0.5'
-                    }`} />
+                    <div
+                      className={`absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-all duration-300 ${
+                        watch("status") === "active" ? "left-6" : "left-0.5"
+                      }`}
+                    />
                   </button>
                 </div>
               </motion.div>
@@ -768,7 +856,9 @@ export default function CreateProduct() {
               >
                 <h2 className="font-bold text-slate-900 dark:text-white text-lg mb-5">
                   Technical Specifications
-                  <span className="ml-2 text-sm font-normal text-slate-400">(optional)</span>
+                  <span className="ml-2 text-sm font-normal text-slate-400">
+                    (optional)
+                  </span>
                 </h2>
                 <SpecsBuilder specs={specs} onChange={setSpecs} />
               </motion.div>
@@ -785,7 +875,10 @@ export default function CreateProduct() {
                 <h2 className="font-bold text-slate-900 dark:text-white text-lg mb-5">
                   Preview & Publish
                 </h2>
-                <PreviewCard formData={{ ...formData, specs }} images={images} />
+                <PreviewCard
+                  formData={{ ...formData, specs }}
+                  images={images}
+                />
               </motion.div>
             )}
           </AnimatePresence>
@@ -816,7 +909,9 @@ export default function CreateProduct() {
                 onClick={handleSubmit(onSubmit)}
                 className="shadow-lg shadow-primary-600/20"
               >
-                {formData.status === 'draft' ? 'Save as Draft' : 'Publish Listing'}
+                {formData.status === "draft"
+                  ? "Save as Draft"
+                  : "Publish Listing"}
               </Button>
             )}
           </div>

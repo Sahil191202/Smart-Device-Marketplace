@@ -1,38 +1,55 @@
 import axios from 'axios';
 import { API_BASE_URL } from '../utils/constants';
-import { useAuthStore } from '../store/auth.store';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // send httpOnly cookies (refresh token)
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
-// ── Request interceptor: attach access token ──────────────────────────────────
+// Request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = useAuthStore.getState().accessToken;
+    // Read from Zustand store first, fallback to localStorage directly
+    // This handles the hydration race condition
+    let token = null;
+
+    try {
+      // Try Zustand store
+      const { useAuthStore } = require('../store/auth.store');
+      token = useAuthStore.getState().accessToken;
+    } catch { /* ignore */ }
+
+    // Fallback: read directly from persisted localStorage
+    if (!token) {
+      try {
+        const persisted = localStorage.getItem('auth-storage');
+        if (persisted) {
+          const parsed = JSON.parse(persisted);
+          token = parsed?.state?.accessToken || null;
+        }
+      } catch { /* ignore */ }
+    }
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
     return config;
   },
   (error) => Promise.reject(error)
 );
 
-// ── Response interceptor: handle 401 + token refresh ─────────────────────────
+// Response interceptor
 let isRefreshing = false;
 let failedQueue = [];
 
 const processQueue = (error, token = null) => {
   failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
+    if (error) prom.reject(error);
+    else prom.resolve(token);
   });
   failedQueue = [];
 };
@@ -42,14 +59,12 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Token expired → try to refresh
     if (
       error.response?.status === 401 &&
       error.response?.data?.code === 'TOKEN_EXPIRED' &&
       !originalRequest._retry
     ) {
       if (isRefreshing) {
-        // Queue requests while refresh is in progress
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
         })
@@ -64,22 +79,18 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Call refresh endpoint (cookie-based)
         const response = await api.post('/auth/refresh');
         const newToken = response.data.data.accessToken;
 
-        // Update store
+        const { useAuthStore } = require('../store/auth.store');
         useAuthStore.getState().setAccessToken(newToken);
 
-        // Retry queued requests
         processQueue(null, newToken);
-
-        // Retry original request
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
-        // Refresh failed → logout
+        const { useAuthStore } = require('../store/auth.store');
         useAuthStore.getState().logout();
         window.location.href = '/login';
         return Promise.reject(refreshError);

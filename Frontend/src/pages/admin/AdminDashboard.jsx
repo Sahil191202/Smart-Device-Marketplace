@@ -1,40 +1,66 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
-  Users, Package, ShoppingBag, TrendingUp,
-  Server, AlertCircle, CheckCircle, Activity,
-  BarChart3, DollarSign, Eye, Cpu,
-  ArrowUpRight, ArrowDownRight, RefreshCw,
+  Users,
+  Package,
+  ShoppingBag,
+  TrendingUp,
+  Server,
+  AlertCircle,
+  CheckCircle,
+  Activity,
+  BarChart3,
+  DollarSign,
+  Eye,
+  Cpu,
+  ArrowUpRight,
+  ArrowDownRight,
+  RefreshCw,
   ShieldCheck,
-} from 'lucide-react';
+} from "lucide-react";
 import {
-  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
   Legend,
-} from 'recharts';
-import { useQuery } from '@tanstack/react-query';
+} from "recharts";
+import { useQuery } from "@tanstack/react-query";
 
-import { adminApi } from '../../api/admin.api';
-import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
-import { PageWrapper } from '../../components/layout/PageWrapper';
-import { formatPrice, formatNumber } from '../../utils/format';
+import { adminApi } from "../../api/admin.api";
+import { Button } from "../../components/ui/Button";
+import { Badge } from "../../components/ui/Badge";
+import { PageWrapper } from "../../components/layout/PageWrapper";
+import { formatPrice, formatNumber } from "../../utils/format";
 
 // ── Custom tooltip for charts ─────────────────────────────────────────────────
-const ChartTooltip = ({ active, payload, label, prefix = '' }) => {
+const ChartTooltip = ({ active, payload, label, prefix = "" }) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="card p-3 shadow-xl border border-slate-100 dark:border-slate-700">
-      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">{label}</p>
+      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+        {label}
+      </p>
       {payload.map((entry) => (
         <div key={entry.name} className="flex items-center gap-2 text-sm">
-          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: entry.color }} />
+          <div
+            className="w-2.5 h-2.5 rounded-full"
+            style={{ backgroundColor: entry.color }}
+          />
           <span className="text-slate-700 dark:text-slate-200 font-medium">
-            {prefix}{typeof entry.value === 'number' && prefix === '₹'
+            {prefix}
+            {typeof entry.value === "number" && prefix === "₹"
               ? formatPrice(entry.value)
-              : entry.value.toLocaleString('en-IN')
-            }
+              : entry.value.toLocaleString("en-IN")}
           </span>
         </div>
       ))}
@@ -43,34 +69,52 @@ const ChartTooltip = ({ active, payload, label, prefix = '' }) => {
 };
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
-const AdminStatCard = ({ icon: Icon, label, value, sub, color, trend, delay, onClick }) => (
+const AdminStatCard = ({
+  icon: Icon,
+  label,
+  value,
+  sub,
+  color,
+  trend,
+  delay,
+  onClick,
+}) => (
   <motion.div
     initial={{ opacity: 0, y: 15 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay }}
     whileHover={{ y: -2 }}
     onClick={onClick}
-    className={`card p-5 ${onClick ? 'cursor-pointer hover:shadow-lg transition-all' : ''}`}
+    className={`card p-5 ${onClick ? "cursor-pointer hover:shadow-lg transition-all" : ""}`}
   >
     <div className="flex items-start justify-between mb-3">
-      <div className={`w-11 h-11 rounded-xl ${color} flex items-center justify-center shadow-sm`}>
+      <div
+        className={`w-11 h-11 rounded-xl ${color} flex items-center justify-center shadow-sm`}
+      >
         <Icon className="w-5 h-5 text-white" />
       </div>
       {trend !== undefined && (
-        <div className={`flex items-center gap-1 text-xs font-semibold ${
-          trend >= 0 ? 'text-green-600' : 'text-red-500'
-        }`}>
-          {trend >= 0
-            ? <ArrowUpRight className="w-3.5 h-3.5" />
-            : <ArrowDownRight className="w-3.5 h-3.5" />
-          }
+        <div
+          className={`flex items-center gap-1 text-xs font-semibold ${
+            trend >= 0 ? "text-green-600" : "text-red-500"
+          }`}
+        >
+          {trend >= 0 ? (
+            <ArrowUpRight className="w-3.5 h-3.5" />
+          ) : (
+            <ArrowDownRight className="w-3.5 h-3.5" />
+          )}
           {Math.abs(trend)}%
         </div>
       )}
     </div>
-    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{label}</p>
+    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+      {label}
+    </p>
     <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
-    {sub && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{sub}</p>}
+    {sub && (
+      <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{sub}</p>
+    )}
   </motion.div>
 );
 
@@ -79,44 +123,51 @@ const MetricsPanel = ({ metrics }) => {
   if (!metrics) return null;
 
   const queueTotal = Object.values(metrics.queues || {}).reduce(
-    (sum, q) => sum + (q.waiting || 0) + (q.active || 0), 0
+    (sum, q) => sum + (q.waiting || 0) + (q.active || 0),
+    0,
   );
 
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
       {[
         {
-          label: 'Heap Used',
+          label: "Heap Used",
           value: `${metrics.memory?.process?.heapUsed || 0} MB`,
           icon: Cpu,
-          color: 'bg-blue-500',
+          color: "bg-blue-500",
         },
         {
-          label: 'CPU Load',
+          label: "CPU Load",
           value: `${metrics.cpu?.load1 || 0}`,
           icon: Activity,
-          color: 'bg-purple-500',
+          color: "bg-purple-500",
         },
         {
-          label: 'Uptime',
+          label: "Uptime",
           value: `${Math.floor((metrics.system?.uptime || 0) / 3600)}h`,
           icon: Server,
-          color: 'bg-green-500',
+          color: "bg-green-500",
         },
         {
-          label: 'Queue Jobs',
+          label: "Queue Jobs",
           value: queueTotal,
           icon: BarChart3,
-          color: 'bg-orange-500',
+          color: "bg-orange-500",
         },
       ].map((item, i) => (
         <div key={item.label} className="card p-4 flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-xl ${item.color} flex items-center justify-center flex-shrink-0`}>
+          <div
+            className={`w-9 h-9 rounded-xl ${item.color} flex items-center justify-center flex-shrink-0`}
+          >
             <item.icon className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">{item.label}</p>
-            <p className="text-base font-bold text-slate-900 dark:text-white">{item.value}</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {item.label}
+            </p>
+            <p className="text-base font-bold text-slate-900 dark:text-white">
+              {item.value}
+            </p>
           </div>
         </div>
       ))}
@@ -129,9 +180,9 @@ const QueueHealth = ({ queues }) => {
   if (!queues) return null;
 
   const STATUS_COLOR = {
-    0: 'bg-green-500',
-    low: 'bg-yellow-500',
-    high: 'bg-red-500',
+    0: "bg-green-500",
+    low: "bg-yellow-500",
+    high: "bg-red-500",
   };
 
   return (
@@ -144,19 +195,25 @@ const QueueHealth = ({ queues }) => {
         {Object.entries(queues).map(([name, stats]) => {
           const failed = stats.failed || 0;
           const waiting = stats.waiting || 0;
-          const status = failed > 5 ? 'high' : waiting > 20 ? 'low' : 0;
+          const status = failed > 5 ? "high" : waiting > 20 ? "low" : 0;
 
           return (
             <div key={name} className="flex items-center gap-3">
-              <div className={`w-2 h-2 rounded-full ${STATUS_COLOR[status]} flex-shrink-0`} />
+              <div
+                className={`w-2 h-2 rounded-full ${STATUS_COLOR[status]} flex-shrink-0`}
+              />
               <span className="text-sm text-slate-700 dark:text-slate-200 flex-1 capitalize">
-                {name.replace(/-/g, ' ')}
+                {name.replace(/-/g, " ")}
               </span>
               <div className="flex items-center gap-3 text-xs text-slate-500">
                 <span title="Waiting">{waiting} waiting</span>
-                <span title="Active" className="text-blue-500">{stats.active || 0} active</span>
+                <span title="Active" className="text-blue-500">
+                  {stats.active || 0} active
+                </span>
                 {failed > 0 && (
-                  <span title="Failed" className="text-red-500">{failed} failed</span>
+                  <span title="Failed" className="text-red-500">
+                    {failed} failed
+                  </span>
                 )}
               </div>
             </div>
@@ -169,9 +226,16 @@ const QueueHealth = ({ queues }) => {
 
 // ── Category donut chart ──────────────────────────────────────────────────────
 const CHART_COLORS = [
-  '#2563eb', '#16a34a', '#9333ea', '#ea580c',
-  '#0891b2', '#dc2626', '#65a30d', '#d97706',
-  '#7c3aed', '#0d9488',
+  "#2563eb",
+  "#16a34a",
+  "#9333ea",
+  "#ea580c",
+  "#0891b2",
+  "#dc2626",
+  "#65a30d",
+  "#d97706",
+  "#7c3aed",
+  "#0d9488",
 ];
 
 const CategoryDonut = ({ data }) => {
@@ -222,7 +286,9 @@ const CategoryDonut = ({ data }) => {
             <div key={item._id} className="flex items-center gap-2">
               <div
                 className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}
+                style={{
+                  backgroundColor: CHART_COLORS[i % CHART_COLORS.length],
+                }}
               />
               <span className="text-xs text-slate-600 dark:text-slate-400 flex-1 capitalize truncate">
                 {item._id}
@@ -240,7 +306,7 @@ const CategoryDonut = ({ data }) => {
 
 // ── Revenue area chart ────────────────────────────────────────────────────────
 const RevenueChart = ({ data, period, onPeriodChange }) => {
-  const PERIODS = ['7d', '30d', '90d', '1y'];
+  const PERIODS = ["7d", "30d", "90d", "1y"];
 
   return (
     <div className="card p-5">
@@ -256,8 +322,8 @@ const RevenueChart = ({ data, period, onPeriodChange }) => {
               onClick={() => onPeriodChange(p)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 period === p
-                  ? 'bg-white dark:bg-dark-800 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700'
+                  ? "bg-white dark:bg-dark-800 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700"
               }`}
             >
               {p}
@@ -268,30 +334,41 @@ const RevenueChart = ({ data, period, onPeriodChange }) => {
 
       {!data?.length ? (
         <div className="h-48 flex items-center justify-center">
-          <p className="text-slate-400 text-sm">No revenue data for this period</p>
+          <p className="text-slate-400 text-sm">
+            No revenue data for this period
+          </p>
         </div>
       ) : (
         <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={data} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+          <AreaChart
+            data={data}
+            margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+          >
             <defs>
               <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#2563eb" stopOpacity={0.15} />
                 <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.1)" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="rgba(100,116,139,0.1)"
+            />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 11, fill: '#94a3b8' }}
+              tick={{ fontSize: 11, fill: "#94a3b8" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v) => {
                 const d = new Date(v);
-                return d.toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
+                return d.toLocaleDateString("en-IN", {
+                  month: "short",
+                  day: "numeric",
+                });
               }}
             />
             <YAxis
-              tick={{ fontSize: 11, fill: '#94a3b8' }}
+              tick={{ fontSize: 11, fill: "#94a3b8" }}
               tickLine={false}
               axisLine={false}
               tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
@@ -305,7 +382,7 @@ const RevenueChart = ({ data, period, onPeriodChange }) => {
               strokeWidth={2.5}
               fill="url(#revenueGrad)"
               dot={false}
-              activeDot={{ r: 5, fill: '#2563eb' }}
+              activeDot={{ r: 5, fill: "#2563eb" }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -319,19 +396,19 @@ const OrderStatusChart = ({ data }) => {
   if (!data?.byStatus?.length) return null;
 
   const STATUS_COLORS_MAP = {
-    confirmed: '#2563eb',
-    shipped: '#9333ea',
-    delivered: '#16a34a',
-    cancelled: '#ef4444',
-    pending: '#f59e0b',
-    refunded: '#64748b',
+    confirmed: "#2563eb",
+    shipped: "#9333ea",
+    delivered: "#16a34a",
+    cancelled: "#ef4444",
+    pending: "#f59e0b",
+    refunded: "#64748b",
   };
 
   const chartData = data.byStatus.map((s) => ({
     name: s._id,
     count: s.count,
     value: s.totalValue,
-    fill: STATUS_COLORS_MAP[s._id] || '#64748b',
+    fill: STATUS_COLORS_MAP[s._id] || "#64748b",
   }));
 
   return (
@@ -343,25 +420,34 @@ const OrderStatusChart = ({ data }) => {
         </h3>
         <div className="text-right">
           <p className="text-xs text-slate-500">Cancellation rate</p>
-          <p className={`text-sm font-bold ${
-            data.cancellationRate > 15 ? 'text-red-500' : 'text-green-600'
-          }`}>
+          <p
+            className={`text-sm font-bold ${
+              data.cancellationRate > 15 ? "text-red-500" : "text-green-600"
+            }`}
+          >
             {data.cancellationRate}%
           </p>
         </div>
       </div>
 
       <ResponsiveContainer width="100%" height={180}>
-        <BarChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,116,139,0.1)" vertical={false} />
+        <BarChart
+          data={chartData}
+          margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+        >
+          <CartesianGrid
+            strokeDasharray="3 3"
+            stroke="rgba(100,116,139,0.1)"
+            vertical={false}
+          />
           <XAxis
             dataKey="name"
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
+            tick={{ fontSize: 11, fill: "#94a3b8" }}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
-            tick={{ fontSize: 11, fill: '#94a3b8' }}
+            tick={{ fontSize: 11, fill: "#94a3b8" }}
             tickLine={false}
             axisLine={false}
           />
@@ -373,7 +459,9 @@ const OrderStatusChart = ({ data }) => {
                 <div className="card p-3 shadow-xl text-xs">
                   <p className="font-semibold capitalize mb-1">{d.name}</p>
                   <p className="text-slate-500">{d.count} orders</p>
-                  <p className="text-primary-600 font-medium">{formatPrice(d.value)}</p>
+                  <p className="text-primary-600 font-medium">
+                    {formatPrice(d.value)}
+                  </p>
                 </div>
               );
             }}
@@ -392,39 +480,44 @@ const OrderStatusChart = ({ data }) => {
 // ── Main Admin Dashboard ──────────────────────────────────────────────────────
 export default function AdminDashboard() {
   const navigate = useNavigate();
-  const [revenuePeriod, setRevenuePeriod] = useState('30d');
+  const [revenuePeriod, setRevenuePeriod] = useState("30d");
 
   // Dashboard snapshot
-  const { data: dashData, isLoading, refetch } = useQuery({
-    queryKey: ['admin', 'dashboard'],
+  const {
+    data: dashData,
+    isLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["admin", "dashboard"],
     queryFn: adminApi.getDashboard,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 0, // ← always fresh for admin
+    refetchOnWindowFocus: true,
   });
 
   // Revenue with period
   const { data: revenueData } = useQuery({
-    queryKey: ['admin', 'revenue', revenuePeriod],
+    queryKey: ["admin", "revenue", revenuePeriod],
     queryFn: () => adminApi.getRevenue({ period: revenuePeriod }),
     staleTime: 1000 * 60 * 5,
   });
 
   // System metrics
   const { data: metricsData, refetch: refetchMetrics } = useQuery({
-    queryKey: ['admin', 'metrics'],
+    queryKey: ["admin", "metrics"],
     queryFn: adminApi.getMetrics,
-    refetchInterval: 60000, // refresh every minute
+    refetchInterval: 60000,
   });
 
   const dash = dashData?.data?.data;
   const revenue = revenueData?.data?.data;
   const metrics = metricsData?.data?.data;
 
+  console.log("dash" , dash)
   const isLoadingFull = isLoading;
 
   return (
     <PageWrapper>
       <div className="container-page py-8 pb-20">
-
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -445,13 +538,16 @@ export default function AdminDashboard() {
               variant="outline"
               size="sm"
               icon={RefreshCw}
-              onClick={() => { refetch(); refetchMetrics(); }}
+              onClick={() => {
+                refetch();
+                refetchMetrics();
+              }}
             >
               Refresh
             </Button>
             <Button
               size="sm"
-              onClick={() => navigate('/admin/users')}
+              onClick={() => navigate("/admin/users")}
               icon={Users}
             >
               Manage Users
@@ -470,7 +566,6 @@ export default function AdminDashboard() {
           </div>
         ) : (
           <div className="space-y-6">
-
             {/* KPI cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <AdminStatCard
@@ -490,17 +585,19 @@ export default function AdminDashboard() {
                 color="bg-green-500"
                 trend={8}
                 delay={0.05}
-                onClick={() => navigate('/admin/users')}
+                onClick={() => navigate("/admin/users")}
               />
               <AdminStatCard
                 icon={Package}
                 label="Active Listings"
                 value={formatNumber(
-                  dash?.products?.byStatus?.find((s) => s._id === 'active')?.count || 0
+                  dash?.products?.byStatus?.find((s) => s._id === "active")
+                    ?.count || 0,
                 )}
                 sub="across all categories"
                 color="bg-purple-500"
                 delay={0.1}
+                onClick={() => navigate("/marketplace")} // ← was navigating to undefined
               />
               <AdminStatCard
                 icon={ShoppingBag}
@@ -510,14 +607,14 @@ export default function AdminDashboard() {
                 color="bg-orange-500"
                 trend={-2}
                 delay={0.15}
-                onClick={() => navigate('/admin/orders')}
+                onClick={() => navigate("/admin/orders")}
               />
             </div>
 
             {/* Charts row */}
             <div className="grid lg:grid-cols-2 gap-6">
               <RevenueChart
-                data={revenue?.timeseries || dash?.revenue?.timeseries}
+                data={revenue?.timeseries || dash?.revenue?.timeseries || []}
                 period={revenuePeriod}
                 onPeriodChange={setRevenuePeriod}
               />
@@ -555,13 +652,15 @@ export default function AdminDashboard() {
                         #{i + 1}
                       </span>
                       <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                        {seller.seller?.name?.[0]?.toUpperCase() || '?'}
+                        {seller.seller?.name?.[0]?.toUpperCase() || "?"}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
                           {seller.seller?.name}
                         </p>
-                        <p className="text-xs text-slate-500">{seller.orderCount} orders</p>
+                        <p className="text-xs text-slate-500">
+                          {seller.orderCount} orders
+                        </p>
                       </div>
                       <span className="text-sm font-bold text-primary-600">
                         {formatPrice(seller.totalRevenue)}

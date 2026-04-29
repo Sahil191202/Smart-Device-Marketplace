@@ -5,24 +5,7 @@ const asyncWrapper = require("../utils/asyncWrapper");
 const env = require("../../config/env");
 const { getRedisClient } = require("../../config/redis");
 
-/**
- * Verifies JWT access token from Authorization: Bearer <token> header.
- * Attaches decoded payload to req.user.
- *
- * Security checks (in order):
- * 1. Token signature + expiry (JWT verify)
- * 2. Token blacklist (Redis) — for revoked tokens (password change, logout)
- * 3. Account ban (Redis) — set by banUser controller, TTL = 15min
- *
- * Why Redis for ban check instead of MongoDB?
- * - authenticate() runs on EVERY authenticated request
- * - MongoDB query per request = massive unnecessary load at scale
- * - Redis GET is O(1) ~0.1ms vs MongoDB findById ~5-50ms
- * - Ban key is set with 15min TTL (matches access token max lifetime)
- *   so after token expires naturally, the ban key is irrelevant anyway
- * - For permanent bans: isBanned=true in MongoDB ensures ban persists
- *   across new login attempts (auth service checks isBanned before issuing tokens)
- */
+
 const authenticate = asyncWrapper(async (req, res, next) => {
   // 1. Extract token from Authorization header
   const authHeader = req.headers.authorization;
@@ -82,18 +65,7 @@ const authenticate = asyncWrapper(async (req, res, next) => {
   next();
 });
 
-/**
- * Optional authentication middleware.
- * Does NOT throw if token is missing or invalid — silently skips.
- *
- * Used for endpoints accessible by both guests and authenticated users:
- *   GET /products     → guests browse, auth users get isWishlisted flag
- *   GET /products/:id → guests see price, auth users see deal score
- *
- * Note: intentionally does NOT check ban status here.
- * Banned users can still browse public content as guests.
- * They are blocked from any action requiring full authenticate().
- */
+
 const optionalAuthenticate = asyncWrapper(async (req, res, next) => {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) return next();

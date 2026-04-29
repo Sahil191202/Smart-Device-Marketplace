@@ -16,20 +16,23 @@ export const useAuthStore = create(
 
       updateUser: (updates) =>
         set((state) => ({
-          user: { ...state.user, ...updates },
+          user: state.user ? { ...state.user, ...updates } : null,
         })),
 
       logout: () =>
         set({ user: null, accessToken: null, isAuthenticated: false }),
 
-      // Getters
       isAdmin: () => get().user?.role === 'admin',
       isSeller: () => ['seller', 'admin'].includes(get().user?.role),
     }),
     {
       name: 'auth-storage',
-      // Only persist user, NOT accessToken (token refreshed via cookie)
-      partialize: (state) => ({ user: state.user }),
+      // NOW persist BOTH user and accessToken
+      partialize: (state) => ({
+        user: state.user,
+        accessToken: state.accessToken,
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );

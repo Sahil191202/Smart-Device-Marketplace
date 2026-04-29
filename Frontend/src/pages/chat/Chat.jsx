@@ -1,19 +1,33 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Send, ArrowLeft, Package, MoreVertical,
-  Check, CheckCheck, Circle, Search,
-  MessageCircle, Loader2, X, Phone,
-} from 'lucide-react';
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+  Send,
+  ArrowLeft,
+  Package,
+  MoreVertical,
+  Check,
+  CheckCheck,
+  Circle,
+  Search,
+  MessageCircle,
+  Loader2,
+  X,
+  Phone,
+} from "lucide-react";
+import {
+  useQuery,
+  useMutation,
+  useQueryClient,
+  useInfiniteQuery,
+} from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
-import { chatApi } from '../../api/chat.api';
-import { useAuthStore } from '../../store/auth.store';
-import { useChatSocket } from '../../hooks/useChatSocket';
-import { formatRelativeTime, formatDate, truncate } from '../../utils/format';
-import { PageWrapper } from '../../components/layout/PageWrapper';
+import { chatApi } from "../../api/chat.api";
+import { useAuthStore } from "../../store/auth.store";
+import { useChatSocket } from "../../hooks/useChatSocket";
+import { formatRelativeTime, formatDate, truncate } from "../../utils/format";
+import { PageWrapper } from "../../components/layout/PageWrapper";
 
 // ── Typing indicator ──────────────────────────────────────────────────────────
 const TypingIndicator = () => (
@@ -29,7 +43,7 @@ const TypingIndicator = () => (
             duration: 0.6,
             repeat: Infinity,
             delay: i * 0.15,
-            ease: 'easeInOut',
+            ease: "easeInOut",
           }}
         />
       ))}
@@ -39,7 +53,7 @@ const TypingIndicator = () => (
 
 // ── Message bubble ────────────────────────────────────────────────────────────
 const MessageBubble = ({ message, isMine, showAvatar, senderName, isRead }) => {
-  const isSystem = message.type === 'system';
+  const isSystem = message.type === "system";
 
   if (isSystem) {
     return (
@@ -55,38 +69,47 @@ const MessageBubble = ({ message, isMine, showAvatar, senderName, isRead }) => {
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`flex items-end gap-2 px-4 py-0.5 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}
+      className={`flex items-end gap-2 px-4 py-0.5 ${isMine ? "flex-row-reverse" : "flex-row"}`}
     >
       {/* Avatar */}
       {!isMine && (
         <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 mb-1">
           {showAvatar ? (
-            typeof message.senderId === 'object'
-              ? message.senderId.name?.[0]?.toUpperCase()
-              : '?'
+            typeof message.senderId === "object" ? (
+              message.senderId.name?.[0]?.toUpperCase()
+            ) : (
+              "?"
+            )
           ) : (
             <span className="opacity-0">_</span>
           )}
         </div>
       )}
 
-      <div className={`max-w-[70%] ${isMine ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
+      <div
+        className={`max-w-[70%] ${isMine ? "items-end" : "items-start"} flex flex-col gap-1`}
+      >
         {/* Sender name (for groups / first message in sequence) */}
         {!isMine && showAvatar && (
           <span className="text-xs font-medium text-slate-500 dark:text-slate-400 ml-1">
-            {typeof message.senderId === 'object' ? message.senderId.name : senderName}
+            {typeof message.senderId === "object"
+              ? message.senderId.name
+              : senderName}
           </span>
         )}
 
         {/* Bubble */}
-        <div className={`
+        <div
+          className={`
           px-4 py-2.5 rounded-2xl text-sm leading-relaxed break-words
-          ${isMine
-            ? 'bg-primary-600 text-white rounded-br-sm shadow-md shadow-primary-600/20'
-            : 'bg-white dark:bg-dark-800 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-bl-sm shadow-sm'
+          ${
+            isMine
+              ? "bg-primary-600 text-white rounded-br-sm shadow-md shadow-primary-600/20"
+              : "bg-white dark:bg-dark-800 text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-700 rounded-bl-sm shadow-sm"
           }
-        `}>
-          {message.type === 'image' && message.media?.url ? (
+        `}
+        >
+          {message.type === "image" && message.media?.url ? (
             <img
               src={message.media.url}
               alt="Shared image"
@@ -99,16 +122,19 @@ const MessageBubble = ({ message, isMine, showAvatar, senderName, isRead }) => {
         </div>
 
         {/* Timestamp + read receipt */}
-        <div className={`flex items-center gap-1 px-1 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>
+        <div
+          className={`flex items-center gap-1 px-1 ${isMine ? "flex-row-reverse" : "flex-row"}`}
+        >
           <span className="text-[10px] text-slate-400 dark:text-slate-500">
             {formatRelativeTime(message.createdAt)}
           </span>
           {isMine && (
             <div className="text-slate-400">
-              {isRead
-                ? <CheckCheck className="w-3.5 h-3.5 text-primary-500" />
-                : <Check className="w-3.5 h-3.5" />
-              }
+              {isRead ? (
+                <CheckCheck className="w-3.5 h-3.5 text-primary-500" />
+              ) : (
+                <Check className="w-3.5 h-3.5" />
+              )}
             </div>
           )}
         </div>
@@ -131,12 +157,10 @@ const DateSeparator = ({ date }) => (
 // ── Room list item ────────────────────────────────────────────────────────────
 const RoomListItem = ({ room, isActive, onClick, currentUserId }) => {
   const otherParticipant = room.participants?.find(
-    (p) => p._id !== currentUserId
+    (p) => p._id !== currentUserId,
   );
 
-  const unread = room.unreadCounts
-    ? (room.unreadCounts[currentUserId] || 0)
-    : 0;
+  const unread = room.unreadCounts ? room.unreadCounts[currentUserId] || 0 : 0;
 
   return (
     <motion.button
@@ -144,9 +168,10 @@ const RoomListItem = ({ room, isActive, onClick, currentUserId }) => {
       onClick={onClick}
       className={`
         w-full text-left p-4 transition-all duration-150 flex items-start gap-3
-        ${isActive
-          ? 'bg-primary-50 dark:bg-primary-900/20 border-r-2 border-primary-500'
-          : 'hover:bg-slate-50 dark:hover:bg-slate-800/50'
+        ${
+          isActive
+            ? "bg-primary-50 dark:bg-primary-900/20 border-r-2 border-primary-500"
+            : "hover:bg-slate-50 dark:hover:bg-slate-800/50"
         }
       `}
     >
@@ -160,7 +185,7 @@ const RoomListItem = ({ room, isActive, onClick, currentUserId }) => {
               className="w-full h-full rounded-full object-cover"
             />
           ) : (
-            otherParticipant?.name?.[0]?.toUpperCase() || '?'
+            otherParticipant?.name?.[0]?.toUpperCase() || "?"
           )}
         </div>
         {/* Online indicator placeholder */}
@@ -171,40 +196,40 @@ const RoomListItem = ({ room, isActive, onClick, currentUserId }) => {
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-1">
           <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
-            {otherParticipant?.name || 'Unknown'}
+            {otherParticipant?.name || "Unknown"}
           </p>
           <span className="text-[10px] text-slate-400 dark:text-slate-500 whitespace-nowrap flex-shrink-0 mt-0.5">
             {room.lastMessage?.sentAt
               ? formatRelativeTime(room.lastMessage.sentAt)
-              : ''
-            }
+              : ""}
           </span>
         </div>
 
         {/* Product context */}
         {room.productId && (
           <p className="text-[10px] text-primary-600 dark:text-primary-400 truncate mt-0.5 font-medium">
-            Re: {typeof room.productId === 'object' ? room.productId.title : ''}
+            Re: {typeof room.productId === "object" ? room.productId.title : ""}
           </p>
         )}
 
         {/* Last message */}
-        <p className={`text-xs mt-0.5 truncate ${
-          unread > 0
-            ? 'text-slate-700 dark:text-slate-200 font-medium'
-            : 'text-slate-500 dark:text-slate-400'
-        }`}>
+        <p
+          className={`text-xs mt-0.5 truncate ${
+            unread > 0
+              ? "text-slate-700 dark:text-slate-200 font-medium"
+              : "text-slate-500 dark:text-slate-400"
+          }`}
+        >
           {room.lastMessage?.content
             ? truncate(room.lastMessage.content, 40)
-            : 'No messages yet'
-          }
+            : "No messages yet"}
         </p>
       </div>
 
       {/* Unread badge */}
       {unread > 0 && (
         <div className="w-5 h-5 rounded-full bg-primary-600 text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-1">
-          {unread > 9 ? '9+' : unread}
+          {unread > 9 ? "9+" : unread}
         </div>
       )}
     </motion.button>
@@ -218,54 +243,75 @@ const ConversationPanel = ({ roomId, onBack }) => {
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState([]);
+  const [pendingIds, setPendingIds] = useState(new Set());
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [readMessageIds, setReadMessageIds] = useState(new Set());
   const typingTimeoutRef = useRef(null);
 
   // Fetch room details
   const { data: roomData } = useQuery({
-    queryKey: ['chat', 'room', roomId],
+    queryKey: ["chat", "room", roomId],
     queryFn: () => chatApi.getRoom(roomId),
     enabled: !!roomId,
   });
 
   const room = roomData?.data?.data?.room;
-  const otherParticipant = room?.participants?.find(
-    (p) => p._id !== user?.id
-  );
+  const otherParticipant = room?.participants?.find((p) => p._id !== user?.id);
   const product = room?.productId;
 
   // Fetch message history
+  // Replace the messages history query in ConversationPanel:
+
   const { data: historyData, isLoading: messagesLoading } = useQuery({
-    queryKey: ['chat', 'messages', roomId],
+    queryKey: ["chat", "messages", roomId],
     queryFn: () => chatApi.getMessages(roomId, { limit: 50 }),
     enabled: !!roomId,
-    onSuccess: (res) => {
-      const history = res?.data?.data?.messages || [];
-      setMessages(history);
-    },
+    // NO onSuccess — use useEffect instead
   });
 
+  // Add this useEffect to load history:
+  useEffect(() => {
+    if (historyData) {
+      const history = historyData?.data?.data?.messages || [];
+      setMessages(history);
+    }
+  }, [historyData]);
   // ── Socket handlers ─────────────────────────────────────────────────────────
   const handleNewMessage = useCallback((msg) => {
     setMessages((prev) => {
-      // Prevent duplicate messages
-      if (prev.some((m) => m._id === msg._id)) return prev;
-      return [...prev, msg];
+      // Check if this is a real message replacing an optimistic one
+      // Remove any temp messages with same content + sender
+      const withoutTemp = prev.filter((m) => {
+        if (!m.isTemp) return true;
+        // If same content and sender, this real message replaces the temp
+        const msgSenderId =
+          typeof msg.senderId === "object" ? msg.senderId._id : msg.senderId;
+        const mSenderId =
+          typeof m.senderId === "object" ? m.senderId._id : m.senderId;
+        return !(m.content === msg.content && mSenderId === msgSenderId);
+      });
+
+      // Check for exact duplicate by _id
+      if (withoutTemp.some((m) => m._id === msg._id)) return withoutTemp;
+
+      return [...withoutTemp, msg];
     });
   }, []);
 
-  const handleTyping = useCallback(({ userId, isTyping }) => {
-    if (userId === user?.id) return;
-    setTypingUsers((prev) => {
-      const next = new Set(prev);
-      if (isTyping) next.add(userId);
-      else next.delete(userId);
-      return next;
-    });
-  }, [user?.id]);
+  const handleTyping = useCallback(
+    ({ userId, isTyping }) => {
+      if (userId === user?.id) return;
+      setTypingUsers((prev) => {
+        const next = new Set(prev);
+        if (isTyping) next.add(userId);
+        else next.delete(userId);
+        return next;
+      });
+    },
+    [user?.id],
+  );
 
   const handleRead = useCallback(({ messageIds }) => {
     setReadMessageIds((prev) => {
@@ -293,7 +339,7 @@ const ConversationPanel = ({ roomId, onBack }) => {
 
   // Auto-scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, typingUsers]);
 
   // Handle typing indicator with debounce
@@ -312,35 +358,19 @@ const ConversationPanel = ({ roomId, onBack }) => {
     const content = inputValue.trim();
     if (!content) return;
 
-    // Optimistic update
-    const tempMsg = {
-      _id: `temp_${Date.now()}`,
-      roomId,
-      senderId: { _id: user?.id, name: user?.name },
-      content,
-      type: 'text',
-      readBy: [{ userId: user?.id }],
-      createdAt: new Date().toISOString(),
-      isTemp: true,
-    };
-
-    setMessages((prev) => [...prev, tempMsg]);
-    setInputValue('');
+    setInputValue("");
     sendTyping(false);
 
-    // Send via socket (server will broadcast back with real _id)
     const sent = sendMessage(content);
     if (!sent) {
-      toast.error('Connection lost. Please refresh.');
-      setMessages((prev) => prev.filter((m) => m._id !== tempMsg._id));
+      toast.error("Connection lost. Please refresh.");
     }
 
-    // Refocus textarea
     textareaRef.current?.focus();
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -349,20 +379,25 @@ const ConversationPanel = ({ roomId, onBack }) => {
   // Group messages by date for separators
   const groupedMessages = messages.reduce((groups, msg, i) => {
     const date = new Date(msg.createdAt).toDateString();
-    const prevDate = i > 0 ? new Date(messages[i - 1].createdAt).toDateString() : null;
+    const prevDate =
+      i > 0 ? new Date(messages[i - 1].createdAt).toDateString() : null;
 
     if (date !== prevDate) {
-      groups.push({ type: 'date', date: msg.createdAt, key: `date_${i}` });
+      groups.push({ type: "date", date: msg.createdAt, key: `date_${i}` });
     }
 
     const prevMsg = messages[i - 1];
-    const isMine = (typeof msg.senderId === 'object' ? msg.senderId._id : msg.senderId) === user?.id;
+    const isMine =
+      (typeof msg.senderId === "object" ? msg.senderId._id : msg.senderId) ===
+      user?.id;
     const prevIsMine = prevMsg
-      ? (typeof prevMsg.senderId === 'object' ? prevMsg.senderId._id : prevMsg.senderId) === user?.id
+      ? (typeof prevMsg.senderId === "object"
+          ? prevMsg.senderId._id
+          : prevMsg.senderId) === user?.id
       : null;
     const showAvatar = !isMine && prevIsMine !== false;
 
-    groups.push({ type: 'message', msg, isMine, showAvatar, key: msg._id });
+    groups.push({ type: "message", msg, isMine, showAvatar, key: msg._id });
     return groups;
   }, []);
 
@@ -384,7 +419,6 @@ const ConversationPanel = ({ roomId, onBack }) => {
 
   return (
     <div className="flex flex-col h-full">
-
       {/* ── Header ──────────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-slate-100 dark:border-slate-700/50 bg-white dark:bg-dark-800 flex-shrink-0">
         {/* Back button (mobile) */}
@@ -405,7 +439,7 @@ const ConversationPanel = ({ roomId, onBack }) => {
                 className="w-full h-full rounded-full object-cover"
               />
             ) : (
-              otherParticipant?.name?.[0]?.toUpperCase() || '?'
+              otherParticipant?.name?.[0]?.toUpperCase() || "?"
             )}
           </div>
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-green-400 border-2 border-white dark:border-dark-800" />
@@ -414,17 +448,17 @@ const ConversationPanel = ({ roomId, onBack }) => {
         {/* Name + product context */}
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-slate-900 dark:text-white text-sm truncate">
-            {otherParticipant?.name || 'Chat'}
+            {otherParticipant?.name || "Chat"}
           </p>
           {product && (
             <p className="text-xs text-primary-600 dark:text-primary-400 truncate font-medium">
-              Re: {typeof product === 'object' ? product.title : ''}
+              Re: {typeof product === "object" ? product.title : ""}
             </p>
           )}
         </div>
 
         {/* Product thumbnail */}
-        {product && typeof product === 'object' && product.images?.[0]?.url && (
+        {product && typeof product === "object" && product.images?.[0]?.url && (
           <div className="w-10 h-10 rounded-xl overflow-hidden border border-slate-100 dark:border-slate-700 flex-shrink-0">
             <img
               src={product.images[0].url}
@@ -452,14 +486,13 @@ const ConversationPanel = ({ roomId, onBack }) => {
             <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs">
               {otherParticipant?.name
                 ? `Say hello to ${otherParticipant.name}!`
-                : 'Send a message to get started'
-              }
+                : "Send a message to get started"}
             </p>
           </div>
         ) : (
           <>
             {groupedMessages.map((item) => {
-              if (item.type === 'date') {
+              if (item.type === "date") {
                 return <DateSeparator key={item.key} date={item.date} />;
               }
 
@@ -515,9 +548,10 @@ const ConversationPanel = ({ roomId, onBack }) => {
             className={`
               w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0
               transition-all duration-200 shadow-md
-              ${inputValue.trim()
-                ? 'bg-primary-600 hover:bg-primary-700 text-white shadow-primary-600/30'
-                : 'bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 shadow-none'
+              ${
+                inputValue.trim()
+                  ? "bg-primary-600 hover:bg-primary-700 text-white shadow-primary-600/30"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-300 dark:text-slate-600 shadow-none"
               }
             `}
           >
@@ -539,12 +573,12 @@ export default function Chat() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [activeRoomId, setActiveRoomId] = useState(urlRoomId || null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showSidebar, setShowSidebar] = useState(true);
 
   // Fetch rooms
   const { data: roomsData, isLoading: roomsLoading } = useQuery({
-    queryKey: ['chat', 'rooms'],
+    queryKey: ["chat", "rooms"],
     queryFn: () => chatApi.getRooms({ limit: 50 }),
     refetchInterval: 30000, // refresh room list every 30s
   });
@@ -556,8 +590,10 @@ export default function Chat() {
     const other = room.participants?.find((p) => p._id !== user?.id);
     return (
       other?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (typeof room.productId === 'object' &&
-        room.productId?.title?.toLowerCase().includes(searchQuery.toLowerCase()))
+      (typeof room.productId === "object" &&
+        room.productId?.title
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()))
     );
   });
 
@@ -578,17 +614,15 @@ export default function Chat() {
   return (
     <PageWrapper>
       <div className="container-page py-0 px-0 sm:py-6 sm:px-4 lg:px-8">
-        <div
-          className="flex h-[calc(100vh-4rem)] sm:h-[calc(100vh-8rem)] rounded-none sm:rounded-2xl overflow-hidden card sm:shadow-xl"
-        >
-
+        <div className="flex h-[calc(100vh-4rem)] sm:h-[calc(100vh-8rem)] rounded-none sm:rounded-2xl overflow-hidden card sm:shadow-xl">
           {/* ── Room list sidebar ──────────────────────────────────────────── */}
-          <div className={`
+          <div
+            className={`
             w-full md:w-80 flex-shrink-0 border-r border-slate-100 dark:border-slate-700/50
             flex flex-col bg-white dark:bg-dark-800
-            ${!showSidebar ? 'hidden md:flex' : 'flex'}
-          `}>
-
+            ${!showSidebar ? "hidden md:flex" : "flex"}
+          `}
+          >
             {/* Sidebar header */}
             <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700/50">
               <div className="flex items-center justify-between mb-4">
@@ -631,7 +665,9 @@ export default function Chat() {
                 <div className="flex flex-col items-center justify-center h-full text-center p-6">
                   <MessageCircle className="w-10 h-10 text-slate-300 mb-3" />
                   <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                    {searchQuery ? 'No conversations found' : 'No conversations yet'}
+                    {searchQuery
+                      ? "No conversations found"
+                      : "No conversations yet"}
                   </p>
                   {!searchQuery && (
                     <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
@@ -656,14 +692,13 @@ export default function Chat() {
           </div>
 
           {/* ── Conversation panel ────────────────────────────────────────── */}
-          <div className={`
+          <div
+            className={`
             flex-1 flex flex-col
-            ${showSidebar && !activeRoomId ? 'hidden md:flex' : 'flex'}
-          `}>
-            <ConversationPanel
-              roomId={activeRoomId}
-              onBack={handleBack}
-            />
+            ${showSidebar && !activeRoomId ? "hidden md:flex" : "flex"}
+          `}
+          >
+            <ConversationPanel roomId={activeRoomId} onBack={handleBack} />
           </div>
         </div>
       </div>

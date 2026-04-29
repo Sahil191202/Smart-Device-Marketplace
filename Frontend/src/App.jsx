@@ -17,6 +17,8 @@ import { ProtectedRoute } from "./components/shared/ProtectedRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useSocket } from "./hooks/useSocket";
 import { createQueryClient } from "./utils/queryClient";
+import { PublicRoute } from './components/shared/PublicRoute';
+import { AuthInitializer } from './components/AuthInitializer';
 
 // Lazy imports
 const Landing = lazy(() => import("./pages/Landing"));
@@ -69,6 +71,7 @@ const AppContent = () => {
 
   return (
     <>
+    <AuthInitializer />
       <AnimatePresence mode="wait">
         <Suspense fallback={<PageLoader />}>
           <Routes location={location} key={location.pathname}>
@@ -76,11 +79,11 @@ const AppContent = () => {
             <Route path="/" element={<Landing />} />
             <Route path="/marketplace" element={<Marketplace />} />
             <Route path="/products/:slug" element={<ProductDetail />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
+            <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
+            <Route path="/forgot-password" element={<PublicRoute><ForgotPassword /></PublicRoute>} />
             <Route path="/verify-email" element={<VerifyEmail />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/reset-password" element={<PublicRoute><ResetPassword /></PublicRoute>} />
 
             {/* Protected */}
             <Route
@@ -178,7 +181,7 @@ const AppContent = () => {
               path="/seller/edit/:id"
               element={
                 <ProtectedRoute requiredRole="seller">
-                  <CreateProduct />
+                  <EditProduct />
                 </ProtectedRoute>
               }
             />
