@@ -1,28 +1,39 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
-  Plus, Package, TrendingUp, ShoppingBag,
-  Eye, Pencil, Trash2, MoreVertical,
-  CheckCircle, XCircle, Clock, Loader2,
-  DollarSign, Tag, BarChart3,
-} from 'lucide-react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+  Plus,
+  Package,
+  TrendingUp,
+  ShoppingBag,
+  Eye,
+  Pencil,
+  Trash2,
+  MoreVertical,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Loader2,
+  DollarSign,
+  Tag,
+  BarChart3,
+} from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
-import { productsApi } from '../../api/products.api';
-import { ordersApi } from '../../api/orders.api';
-import { Button } from '../../components/ui/Button';
-import { Badge } from '../../components/ui/Badge';
-import { PageWrapper } from '../../components/layout/PageWrapper';
-import { formatPrice, formatDate, truncate } from '../../utils/format';
+import { productsApi } from "../../api/products.api";
+import { ordersApi } from "../../api/orders.api";
+import { Button } from "../../components/ui/Button";
+import { Badge } from "../../components/ui/Badge";
+import { PageWrapper } from "../../components/layout/PageWrapper";
+import { formatPrice, formatDate, truncate } from "../../utils/format";
 
 // ── Status config ─────────────────────────────────────────────────────────────
 const PRODUCT_STATUS = {
-  active: { label: 'Active', variant: 'success', icon: CheckCircle },
-  sold: { label: 'Sold', variant: 'info', icon: CheckCircle },
-  draft: { label: 'Draft', variant: 'warning', icon: Clock },
-  removed: { label: 'Removed', variant: 'danger', icon: XCircle },
+  active: { label: "Active", variant: "success", icon: CheckCircle },
+  sold: { label: "Sold", variant: "info", icon: CheckCircle },
+  draft: { label: "Draft", variant: "warning", icon: Clock },
+  removed: { label: "Removed", variant: "danger", icon: XCircle },
 };
 
 // ── Stat card ─────────────────────────────────────────────────────────────────
@@ -35,10 +46,16 @@ const StatCard = ({ icon: Icon, label, value, color, delay }) => (
   >
     <div className="flex items-center justify-between">
       <div>
-        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">{label}</p>
-        <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
+          {label}
+        </p>
+        <p className="text-2xl font-bold text-slate-900 dark:text-white">
+          {value}
+        </p>
       </div>
-      <div className={`w-11 h-11 rounded-xl ${color} flex items-center justify-center`}>
+      <div
+        className={`w-11 h-11 rounded-xl ${color} flex items-center justify-center`}
+      >
         <Icon className="w-5 h-5 text-white" />
       </div>
     </div>
@@ -50,7 +67,8 @@ const ProductRow = ({ product, onDelete, onStatusChange, deleting }) => {
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const cfg = PRODUCT_STATUS[product.status] || PRODUCT_STATUS.active;
-  const primaryImage = product.images?.find(i => i.isPrimary)?.url || product.images?.[0]?.url;
+  const primaryImage =
+    product.images?.find((i) => i.isPrimary)?.url || product.images?.[0]?.url;
 
   return (
     <motion.div
@@ -63,7 +81,11 @@ const ProductRow = ({ product, onDelete, onStatusChange, deleting }) => {
       {/* Image */}
       <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0">
         {primaryImage ? (
-          <img src={primaryImage} alt="" className="w-full h-full object-cover" />
+          <img
+            src={primaryImage}
+            alt=""
+            className="w-full h-full object-cover"
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <Package className="w-6 h-6 text-slate-300" />
@@ -147,13 +169,13 @@ const ProductRow = ({ product, onDelete, onStatusChange, deleting }) => {
 export default function SellerDashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState('listings');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [activeTab, setActiveTab] = useState("listings");
+  const [statusFilter, setStatusFilter] = useState("");
   const [deletingId, setDeletingId] = useState(null);
 
   // Fetch my listings
   const { data: listingsData, isLoading: listingsLoading } = useQuery({
-    queryKey: ['seller', 'listings', statusFilter],
+    queryKey: ["seller", "listings", statusFilter],
     queryFn: () =>
       productsApi.getMyListings({
         limit: 50,
@@ -163,9 +185,9 @@ export default function SellerDashboard() {
 
   // Fetch seller orders
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
-    queryKey: ['seller', 'orders'],
+    queryKey: ["seller", "orders"],
     queryFn: () => ordersApi.getSellerOrders({ limit: 20 }),
-    enabled: activeTab === 'orders',
+    enabled: activeTab === "orders",
   });
 
   const listings = listingsData?.data?.data?.products || [];
@@ -174,8 +196,8 @@ export default function SellerDashboard() {
   // Stats derived from listings
   const stats = {
     total: listings.length,
-    active: listings.filter((p) => p.status === 'active').length,
-    sold: listings.filter((p) => p.status === 'sold').length,
+    active: listings.filter((p) => p.status === "active").length,
+    sold: listings.filter((p) => p.status === "sold").length,
     totalViews: listings.reduce((sum, p) => sum + (p.views || 0), 0),
   };
 
@@ -184,24 +206,24 @@ export default function SellerDashboard() {
     mutationFn: (id) => productsApi.delete(id),
     onMutate: (id) => setDeletingId(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seller', 'listings'] });
-      toast.success('Listing removed');
+      queryClient.invalidateQueries({ queryKey: ["seller", "listings"] });
+      toast.success("Listing removed");
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed to remove'),
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to remove"),
     onSettled: () => setDeletingId(null),
   });
 
   const STATUS_FILTER_TABS = [
-    { value: '', label: 'All' },
-    { value: 'active', label: 'Active' },
-    { value: 'sold', label: 'Sold' },
-    { value: 'draft', label: 'Draft' },
+    { value: "", label: "All" },
+    { value: "active", label: "Active" },
+    { value: "sold", label: "Sold" },
+    { value: "draft", label: "Draft" },
   ];
 
   return (
     <PageWrapper>
       <div className="container-page py-8 pb-20">
-
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -219,7 +241,7 @@ export default function SellerDashboard() {
           <Button
             icon={Plus}
             size="lg"
-            onClick={() => navigate('/seller/create')}
+            onClick={() => navigate("/seller/create")}
             className="shadow-lg shadow-primary-600/20"
           >
             New Listing
@@ -228,34 +250,60 @@ export default function SellerDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <StatCard icon={Tag} label="Total Listings" value={stats.total} color="bg-primary-600" delay={0} />
-          <StatCard icon={CheckCircle} label="Active" value={stats.active} color="bg-green-500" delay={0.05} />
-          <StatCard icon={ShoppingBag} label="Sold" value={stats.sold} color="bg-purple-500" delay={0.1} />
-          <StatCard icon={Eye} label="Total Views" value={stats.totalViews.toLocaleString('en-IN')} color="bg-orange-500" delay={0.15} />
+          <StatCard
+            icon={Tag}
+            label="Total Listings"
+            value={stats.total}
+            color="bg-primary-600"
+            delay={0}
+          />
+          <StatCard
+            icon={CheckCircle}
+            label="Active"
+            value={stats.active}
+            color="bg-green-500"
+            delay={0.05}
+          />
+          <StatCard
+            icon={ShoppingBag}
+            label="Sold"
+            value={stats.sold}
+            color="bg-purple-500"
+            delay={0.1}
+          />
+          <StatCard
+            icon={Eye}
+            label="Total Views"
+            value={stats.totalViews.toLocaleString("en-IN")}
+            color="bg-orange-500"
+            delay={0.15}
+          />
         </div>
 
         {/* Main tabs */}
         <div className="flex gap-1 mb-6 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 w-fit">
-          {['listings', 'orders'].map((tab) => (
+          {["listings", "orders"].map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-5 py-2 rounded-lg text-sm font-medium transition-all capitalize ${
                 activeTab === tab
-                  ? 'bg-white dark:bg-dark-800 text-slate-900 dark:text-white shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                  ? "bg-white dark:bg-dark-800 text-slate-900 dark:text-white shadow-sm"
+                  : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
               }`}
             >
               {tab}
-              {tab === 'listings' && stats.total > 0 && (
-                <span className="ml-2 text-xs text-slate-400">({stats.total})</span>
+              {tab === "listings" && stats.total > 0 && (
+                <span className="ml-2 text-xs text-slate-400">
+                  ({stats.total})
+                </span>
               )}
             </button>
           ))}
         </div>
 
         {/* ── Listings tab ──────────────────────────────────────────────────── */}
-        {activeTab === 'listings' && (
+        {activeTab === "listings" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -269,8 +317,8 @@ export default function SellerDashboard() {
                   onClick={() => setStatusFilter(tab.value)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all border flex-shrink-0 ${
                     statusFilter === tab.value
-                      ? 'bg-primary-600 text-white border-primary-600'
-                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300'
+                      ? "bg-primary-600 text-white border-primary-600"
+                      : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300"
                   }`}
                 >
                   {tab.label}
@@ -288,11 +336,13 @@ export default function SellerDashboard() {
               <div className="text-center py-16">
                 <Package className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                 <p className="text-slate-500 dark:text-slate-400 text-sm mb-4">
-                  {statusFilter ? `No ${statusFilter} listings` : 'No listings yet'}
+                  {statusFilter
+                    ? `No ${statusFilter} listings`
+                    : "No listings yet"}
                 </p>
                 <Button
                   icon={Plus}
-                  onClick={() => navigate('/seller/create')}
+                  onClick={() => navigate("/seller/create")}
                   size="sm"
                 >
                   Create Your First Listing
@@ -316,7 +366,7 @@ export default function SellerDashboard() {
         )}
 
         {/* ── Orders tab ────────────────────────────────────────────────────── */}
-        {activeTab === 'orders' && (
+        {activeTab === "orders" && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -332,7 +382,8 @@ export default function SellerDashboard() {
               <div className="text-center py-16">
                 <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                 <p className="text-slate-500 dark:text-slate-400 text-sm">
-                  No orders yet. Once buyers purchase your items, orders will appear here.
+                  No orders yet. Once buyers purchase your items, orders will
+                  appear here.
                 </p>
               </div>
             ) : (
@@ -355,26 +406,44 @@ const SellerOrderRow = ({ order }) => {
   const queryClient = useQueryClient();
   const [showShipForm, setShowShipForm] = useState(false);
   const [trackingData, setTrackingData] = useState({
-    courier: '',
-    trackingNumber: '',
+    courier: "",
+    trackingNumber: "",
   });
 
   const { mutate: markShipped, isPending: shipping } = useMutation({
     mutationFn: () => ordersApi.markShipped(order._id, trackingData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['seller', 'orders'] });
+      queryClient.invalidateQueries({ queryKey: ["seller", "orders"] });
       setShowShipForm(false);
-      toast.success('Order marked as shipped!');
+      toast.success("Order marked as shipped!");
     },
-    onError: (err) => toast.error(err.response?.data?.message || 'Failed'),
+    onError: (err) => toast.error(err.response?.data?.message || "Failed"),
   });
 
+  const { mutate: cancelOrder, isPending: cancelling } = useMutation({
+    mutationFn: (reason) => ordersApi.cancel(order._id, reason),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: ["seller", "orders"] });
+      const data = res.data.data;
+      if (data.refundInitiated) {
+        toast.success("Order cancelled. Refund initiated for buyer.");
+      } else {
+        toast.success("Order cancelled");
+      }
+    },
+    onError: (err) =>
+      toast.error(err.response?.data?.message || "Failed to cancel"),
+  });
+
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+
   const STATUS_COLORS = {
-    pending: 'text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30',
-    confirmed: 'text-blue-500 bg-blue-100 dark:bg-blue-900/30',
-    shipped: 'text-purple-500 bg-purple-100 dark:bg-purple-900/30',
-    delivered: 'text-green-500 bg-green-100 dark:bg-green-900/30',
-    cancelled: 'text-red-500 bg-red-100 dark:bg-red-900/30',
+    pending: "text-yellow-500 bg-yellow-100 dark:bg-yellow-900/30",
+    confirmed: "text-blue-500 bg-blue-100 dark:bg-blue-900/30",
+    shipped: "text-purple-500 bg-purple-100 dark:bg-purple-900/30",
+    delivered: "text-green-500 bg-green-100 dark:bg-green-900/30",
+    cancelled: "text-red-500 bg-red-100 dark:bg-red-900/30",
   };
 
   return (
@@ -382,7 +451,11 @@ const SellerOrderRow = ({ order }) => {
       <div className="flex items-start gap-3">
         <div className="w-12 h-12 rounded-xl bg-slate-100 dark:bg-slate-800 overflow-hidden flex-shrink-0">
           {order.productSnapshot?.primaryImageUrl ? (
-            <img src={order.productSnapshot.primaryImageUrl} alt="" className="w-full h-full object-cover" />
+            <img
+              src={order.productSnapshot.primaryImageUrl}
+              alt=""
+              className="w-full h-full object-cover"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Package className="w-5 h-5 text-slate-300" />
@@ -395,7 +468,8 @@ const SellerOrderRow = ({ order }) => {
             {order.productSnapshot?.title}
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Order #{order._id?.slice(-8).toUpperCase()} • {formatDate(order.createdAt)}
+            Order #{order._id?.slice(-8).toUpperCase()} •{" "}
+            {formatDate(order.createdAt)}
           </p>
         </div>
 
@@ -403,7 +477,9 @@ const SellerOrderRow = ({ order }) => {
           <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">
             {formatPrice(order.amount)}
           </p>
-          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[order.status] || ''}`}>
+          <span
+            className={`px-2.5 py-1 rounded-full text-xs font-semibold ${STATUS_COLORS[order.status] || ""}`}
+          >
             {order.status}
           </span>
         </div>
@@ -412,18 +488,23 @@ const SellerOrderRow = ({ order }) => {
       {/* Buyer info */}
       {order.buyerId && (
         <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
-          <span>Buyer: {typeof order.buyerId === 'object' ? order.buyerId.name : 'N/A'}</span>
+          <span>
+            Buyer:{" "}
+            {typeof order.buyerId === "object" ? order.buyerId.name : "N/A"}
+          </span>
           {order.deliveryAddress && (
             <>
               <span>•</span>
-              <span>{order.deliveryAddress.city}, {order.deliveryAddress.state}</span>
+              <span>
+                {order.deliveryAddress.city}, {order.deliveryAddress.state}
+              </span>
             </>
           )}
         </div>
       )}
 
       {/* Ship action */}
-      {order.status === 'confirmed' && (
+      {order.status === "confirmed" && (
         <>
           {!showShipForm ? (
             <Button
@@ -437,26 +518,35 @@ const SellerOrderRow = ({ order }) => {
           ) : (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
+              animate={{ opacity: 1, height: "auto" }}
               className="grid grid-cols-2 gap-2"
             >
               <input
                 placeholder="Courier name (e.g. Delhivery)"
                 value={trackingData.courier}
-                onChange={(e) => setTrackingData((p) => ({ ...p, courier: e.target.value }))}
+                onChange={(e) =>
+                  setTrackingData((p) => ({ ...p, courier: e.target.value }))
+                }
                 className="input-base text-sm py-2 col-span-2"
               />
               <input
                 placeholder="Tracking number"
                 value={trackingData.trackingNumber}
-                onChange={(e) => setTrackingData((p) => ({ ...p, trackingNumber: e.target.value }))}
+                onChange={(e) =>
+                  setTrackingData((p) => ({
+                    ...p,
+                    trackingNumber: e.target.value,
+                  }))
+                }
                 className="input-base text-sm py-2"
               />
               <div className="flex gap-2">
                 <Button
                   size="sm"
                   loading={shipping}
-                  disabled={!trackingData.courier || !trackingData.trackingNumber}
+                  disabled={
+                    !trackingData.courier || !trackingData.trackingNumber
+                  }
                   onClick={() => markShipped()}
                   fullWidth
                 >
@@ -473,6 +563,54 @@ const SellerOrderRow = ({ order }) => {
             </motion.div>
           )}
         </>
+      )}
+      {["confirmed", "pending"].includes(order.status) && !showCancelForm && (
+        <Button
+          size="sm"
+          variant="outline"
+          className="!text-red-500 !border-red-200 hover:!bg-red-50"
+          onClick={() => setShowCancelForm(true)}
+        >
+          Cancel Order
+        </Button>
+      )}
+
+      {showCancelForm && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          className="space-y-2"
+        >
+          <textarea
+            placeholder="Reason for cancellation (required)..."
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+            rows={2}
+            className="input-base text-sm resize-none w-full"
+          />
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="danger"
+              loading={cancelling}
+              disabled={!cancelReason.trim()}
+              onClick={() => cancelOrder(cancelReason)}
+              fullWidth
+            >
+              Confirm Cancel
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setShowCancelForm(false);
+                setCancelReason("");
+              }}
+            >
+              Back
+            </Button>
+          </div>
+        </motion.div>
       )}
     </div>
   );

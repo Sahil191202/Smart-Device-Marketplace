@@ -1,33 +1,37 @@
 // src/modules/auth/auth.controller.js
-const authService = require('./auth.service');
-const apiResponse = require('../../shared/utils/apiResponse');
-const asyncWrapper = require('../../shared/utils/asyncWrapper');
-const { TOKEN_COOKIE_NAME, REFRESH_TOKEN_EXPIRY_MS } = require('./auth.constants');
-const env = require('../../config/env');
+const authService = require("./auth.service");
+const apiResponse = require("../../shared/utils/apiResponse");
+const asyncWrapper = require("../../shared/utils/asyncWrapper");
+const {
+  TOKEN_COOKIE_NAME,
+  REFRESH_TOKEN_EXPIRY_MS,
+} = require("./auth.constants");
+const env = require("../../config/env");
 
 // ── Cookie options ────────────────────────────────────────────────────────────
 const REFRESH_COOKIE_OPTIONS = {
-  httpOnly: true,                                    // XSS protection — JS can't read this
-  secure: env.NODE_ENV === 'production',             // HTTPS only in production
-  sameSite: env.NODE_ENV === 'production' ? 'strict' : 'lax', // CSRF protection
+  httpOnly: true, // XSS protection — JS can't read this
+  secure: env.NODE_ENV === "production", // HTTPS only in production
+  sameSite: env.NODE_ENV === "production" ? "strict" : "lax", // CSRF protection
   maxAge: REFRESH_TOKEN_EXPIRY_MS,
-  path: '/api/v1/auth',                             // cookie only sent to auth routes
+  path: "/api/v1/auth", // cookie only sent to auth routes
 };
 
 // Embed token family in cookie name to support multiple sessions
 // Alternative: store family in a separate cookie
-const setRefreshCookie = (res, token, family) => {
-  res.cookie(TOKEN_COOKIE_NAME, JSON.stringify({ token, family }), REFRESH_COOKIE_OPTIONS);
+const setRefreshCookie = (res, token, family, userId = null) => {
+  const cookiePayload = JSON.stringify({ token, family, userId });
+  res.cookie(TOKEN_COOKIE_NAME, cookiePayload, REFRESH_COOKIE_OPTIONS);
 };
 
 const clearRefreshCookie = (res) => {
-  res.clearCookie(TOKEN_COOKIE_NAME, { path: '/api/v1/auth' });
+  res.clearCookie(TOKEN_COOKIE_NAME, { path: "/api/v1/auth" });
 };
 
 const register = asyncWrapper(async (req, res) => {
   const user = await authService.register(req.body);
   apiResponse.created(res, {
-    message: 'Registration successful. Please verify your email.',
+    message: "Registration successful. Please verify your email.",
     data: { user },
   });
 });
@@ -36,25 +40,25 @@ const login = asyncWrapper(async (req, res) => {
   const { accessToken, refreshToken, family, user } = await authService.login({
     ...req.body,
     ip: req.ip,
-    userAgent: req.get('User-Agent'),
+    userAgent: req.get("User-Agent"),
   });
 
-  setRefreshCookie(res, refreshToken, family);
+  setRefreshCookie(res, refreshToken, family, user.id.toString());
 
   apiResponse.success(res, {
-    message: 'Login successful',
+    message: "Login successful",
     data: { accessToken, user },
   });
 });
 
 const refresh = asyncWrapper(async (req, res) => {
-  // Parse refresh token + family from httpOnly cookie
   const cookieRaw = req.cookies[TOKEN_COOKIE_NAME];
+
   if (!cookieRaw) {
     return res.status(401).json({
       success: false,
-      message: 'No refresh token',
-      code: 'UNAUTHORIZED',
+      message: "No refresh token",
+      code: "UNAUTHORIZED",
     });
   }
 
@@ -63,44 +67,70 @@ const refresh = asyncWrapper(async (req, res) => {
     cookieData = JSON.parse(cookieRaw);
   } catch {
     clearRefreshCookie(res);
-    return res.status(401).json({ success: false, message: 'Invalid session', code: 'UNAUTHORIZED' });
+    return res.status(401).json({
+      success: false,
+      message: "Invalid session",
+      code: "UNAUTHORIZED",
+    });
   }
 
-  const { token: refreshToken, family } = cookieData;
+  const { token: refreshToken, family, userId: cookieUserId } = cookieData;
 
-  // Extract userId from access token (even if expired — we just need the ID)
-  // We read it from the Authorization header if present, else from cookie
-  const authHeader = req.headers.authorization;
-  let userId = null;
-
-  if (authHeader?.startsWith('Bearer ')) {
-    try {
-      const decoded = require('jsonwebtoken').decode(authHeader.slice(7));
-      userId = decoded?.sub;
-    } catch { /* ignore */ }
+  if (!refreshToken || !family) {
+    clearRefreshCookie(res);
+    return res.status(401).json({
+      success: false,
+      message: "Invalid session data",
+      code: "UNAUTHORIZED",
+    });
   }
 
-  // userId can also come from a separate cookie or the refresh cookie payload
-  // For now, we store it in the cookie alongside the token
-  if (!userId && cookieData.userId) {
-    userId = cookieData.userId;
+  // Extract userId from expired access token OR from cookie
+  let userId = cookieUserId || null;
+
+  // Try to decode the access token (even if expired) to get userId
+  if (!userId) {
+    const authHeader = req.headers.authorization;
+    if (authHeader?.startsWith("Bearer ")) {
+      try {
+        const jwt = require("jsonwebtoken");
+        const decoded = jwt.decode(authHeader.slice(7));
+        userId = decoded?.sub || null;
+      } catch {
+        /* ignore */
+      }
+    }
   }
 
-  const tokens = await authService.refreshTokens({
-    refreshToken,
-    family,
-    userId,
-    ip: req.ip,
-    userAgent: req.get('User-Agent'),
-  });
+  if (!userId) {
+    clearRefreshCookie(res);
+    return res.status(401).json({
+      success: false,
+      message: "Cannot identify user session",
+      code: "UNAUTHORIZED",
+    });
+  }
 
-  // Rotate the cookie too
-  setRefreshCookie(res, tokens.refreshToken, tokens.family);
+  try {
+    const tokens = await authService.refreshTokens({
+      refreshToken,
+      family,
+      userId,
+      ip: req.ip,
+      userAgent: req.get("User-Agent"),
+    });
 
-  apiResponse.success(res, {
-    message: 'Token refreshed',
-    data: { accessToken: tokens.accessToken },
-  });
+    // Rotate cookie with new token + userId embedded
+    setRefreshCookie(res, tokens.refreshToken, tokens.family, userId);
+
+    apiResponse.success(res, {
+      message: "Token refreshed",
+      data: { accessToken: tokens.accessToken },
+    });
+  } catch (err) {
+    clearRefreshCookie(res);
+    throw err;
+  }
 });
 
 const logout = asyncWrapper(async (req, res) => {
@@ -110,18 +140,20 @@ const logout = asyncWrapper(async (req, res) => {
   if (cookieRaw) {
     try {
       family = JSON.parse(cookieRaw).family;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
   }
 
   await authService.logout({
     userId: req.user.id,
     family,
-    logoutAll: req.query.all === 'true',
+    logoutAll: req.query.all === "true",
   });
 
   clearRefreshCookie(res);
 
-  apiResponse.success(res, { message: 'Logged out successfully', data: null });
+  apiResponse.success(res, { message: "Logged out successfully", data: null });
 });
 
 const verifyEmail = asyncWrapper(async (req, res) => {
@@ -155,7 +187,7 @@ const changePassword = asyncWrapper(async (req, res) => {
 const getMe = asyncWrapper(async (req, res) => {
   // req.user is set by authenticate middleware
   apiResponse.success(res, {
-    message: 'Profile fetched',
+    message: "Profile fetched",
     data: { user: req.user },
   });
 });

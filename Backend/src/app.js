@@ -119,7 +119,7 @@ const createApp = () => {
 
   // ── Rate limiter ──────────────────────────────────────────────
   const { globalLimiter } = require('./shared/middleware/rateLimiter');
-  app.use("/api", globalLimiter);
+  // app.use("/api", globalLimiter);
 
 
   // ── Health check (before auth, always accessible) ────────────────────

@@ -13,6 +13,7 @@ const AppError = require("../../shared/utils/AppError");
 const logger = require("../../config/logger");
 const { ORDER_STATUS } = require("./order.model");
 const cacheManager = require("../../shared/cache/cache.manager");
+const { razorpay } = require("../../config/razorpay");
 
 // Cancellation window: 24 hours after order confirmation
 const CANCELLATION_WINDOW_MS = 24 * 60 * 60 * 1000;
@@ -374,21 +375,22 @@ class OrderService {
     const order = await orderRepository.findById(orderId);
     if (!order) throw AppError.notFound("Order");
 
-    // Check ownership (buyer or seller or admin can cancel)
+    // Ownership check
     const isBuyer = order.buyerId.toString() === userId;
     const isSeller = order.sellerId.toString() === userId;
+
     if (!isBuyer && !isSeller && role !== "admin") {
       throw AppError.forbidden();
     }
 
-    if (!order.canTransitionTo(ORDER_STATUS.CANCELLED)) {
+    if (!order.canTransitionTo("cancelled")) {
       throw AppError.badRequest(
         `Cannot cancel an order with status: ${order.status}`,
       );
     }
 
-    // Buyers can only cancel within 24h of confirmation
-    if (isBuyer && order.status === ORDER_STATUS.CONFIRMED) {
+    // Buyers: only within 24h of confirmation
+    if (isBuyer && order.status === "confirmed") {
       const confirmedAt = order.timeline.find(
         (e) => e.status === "confirmed",
       )?.createdAt;
@@ -404,26 +406,62 @@ class OrderService {
 
     const actor = role === "admin" ? "admin" : isBuyer ? "buyer" : "seller";
 
+    // ── Attempt Razorpay refund if payment was captured ───────────────────────
+    let refundInitiated = false;
+    let refundId = null;
+
+    if (order.razorpayPaymentId && order.status === "confirmed") {
+      try {
+        const refund = await razorpay.payments.refund(order.razorpayPaymentId, {
+          amount: order.amount * 100, // paise
+          notes: {
+            orderId: order._id.toString(),
+            reason: reason,
+            initiatedBy: actor,
+          },
+        });
+        refundInitiated = true;
+        refundId = refund.id;
+        logger.info("Razorpay refund initiated", {
+          orderId: order._id,
+          refundId: refund.id,
+          amount: order.amount,
+        });
+      } catch (refundErr) {
+        // Log but don't fail the cancellation
+        logger.error("Razorpay refund failed", {
+          orderId: order._id,
+          paymentId: order.razorpayPaymentId,
+          error: refundErr.message,
+        });
+      }
+    }
+
     const updated = await orderRepository.updateWithVersion(
       order._id,
       order.version,
       {
-        status: ORDER_STATUS.CANCELLED,
+        status: "cancelled",
         cancelReason: reason,
         cancelledBy: actor,
+        // If refund initiated, move to refunded status
+        ...(refundInitiated && { status: "refunded" }),
       },
     );
 
     if (!updated) throw AppError.conflict("Order was modified concurrently");
 
     await orderRepository.addTimelineEvent(orderId, {
-      status: ORDER_STATUS.CANCELLED,
-      note: reason,
+      status: refundInitiated ? "refunded" : "cancelled",
+      note: refundInitiated
+        ? `Cancelled by ${actor}. Refund initiated (ID: ${refundId}). Reason: ${reason}`
+        : `Cancelled by ${actor}. Reason: ${reason}`,
       actor,
       actorId: userId,
+      metadata: { refundId, refundInitiated },
     });
 
-    // Re-activate product (make it listable again)
+    // Re-activate product
     const Product = require("../products/product.model");
     await Product.updateOne(
       { _id: order.productId, status: "sold" },
@@ -432,19 +470,50 @@ class OrderService {
 
     // Notify the other party
     const notifyUserId = isBuyer ? order.sellerId : order.buyerId;
+    const notificationBody = refundInitiated
+      ? `Order for ${order.productSnapshot.title} was cancelled. Refund of ₹${order.amount.toLocaleString("en-IN")} has been initiated.`
+      : `Order for ${order.productSnapshot.title} was cancelled. Reason: ${reason}`;
+
     await notificationService
       .create({
         userId: notifyUserId,
         type: NOTIFICATION_TYPES.ORDER_UPDATE,
-        title: "Order Cancelled",
-        body: `Order for ${order.productSnapshot.title} was cancelled. Reason: ${reason}`,
-        metadata: { orderId: order._id.toString(), status: "cancelled" },
+        title: refundInitiated
+          ? "Order Cancelled — Refund Initiated"
+          : "Order Cancelled",
+        body: notificationBody,
+        metadata: {
+          orderId: order._id.toString(),
+          status: "cancelled",
+          refundInitiated,
+          refundId,
+        },
         actionUrl: `/orders/${order._id}`,
       })
       .catch(() => {});
 
-    logger.info("Order cancelled", { orderId, actor, reason });
-    return updated;
+    // Also notify buyer if seller cancelled
+    if (isSeller && order.razorpayPaymentId) {
+      await notificationService
+        .create({
+          userId: order.buyerId,
+          type: NOTIFICATION_TYPES.ORDER_UPDATE,
+          title: "Order Cancelled by Seller",
+          body: refundInitiated
+            ? `The seller cancelled your order for ${order.productSnapshot.title}. Refund of ₹${order.amount.toLocaleString("en-IN")} initiated.`
+            : `The seller cancelled your order for ${order.productSnapshot.title}.`,
+          metadata: {
+            orderId: order._id.toString(),
+            refundInitiated,
+            refundId,
+          },
+          actionUrl: `/orders/${order._id}`,
+        })
+        .catch(() => {});
+    }
+
+    logger.info("Order cancelled", { orderId, actor, reason, refundInitiated });
+    return { ...updated, refundInitiated, refundId };
   }
 
   // ── Queries ───────────────────────────────────────────────────────────────

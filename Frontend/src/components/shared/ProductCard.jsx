@@ -1,27 +1,34 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Heart, Package, Zap, Eye } from 'lucide-react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import toast from 'react-hot-toast';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Heart, Package, Zap, Eye } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
-import { wishlistApi } from '../../api/wishlist.api';
-import { useAuthStore } from '../../store/auth.store';
-import { formatPrice, getConditionColor, getDealVerdict } from '../../utils/format';
-import { truncate } from '../../utils/format';
+import { wishlistApi } from "../../api/wishlist.api";
+import { useAuthStore } from "../../store/auth.store";
+import {
+  formatPrice,
+  getConditionColor,
+  getDealVerdict,
+} from "../../utils/format";
+import { truncate } from "../../utils/format";
 
-export const ProductCard = ({ product, index = 0, showWishlistStatus = false }) => {
+export const ProductCard = ({
+  product,
+  index = 0,
+  showWishlistStatus = false,
+}) => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isAuthenticated } = useAuthStore();
 
   const [isWishlisted, setIsWishlisted] = useState(
-    product.isWishlisted || false
+    product.isWishlisted || false,
   );
 
   const primaryImage =
-    product.images?.find((i) => i.isPrimary)?.url ||
-    product.images?.[0]?.url;
+    product.images?.find((i) => i.isPrimary)?.url || product.images?.[0]?.url;
 
   const dealVerdict = product.predictedPrice?.value
     ? getDealVerdict(
@@ -29,37 +36,39 @@ export const ProductCard = ({ product, index = 0, showWishlistStatus = false }) 
           0,
           Math.min(
             100,
-            (2 - product.price / product.predictedPrice.value) * 50
-          )
-        )
+            (2 - product.price / product.predictedPrice.value) * 50,
+          ),
+        ),
       )
     : null;
 
   // ── Wishlist toggle ───────────────────────────────────────────────────────
   const { mutate: toggleWishlist, isPending: wishlistPending } = useMutation({
-    mutationFn: () =>
-      isWishlisted
+    mutationFn: (currentlyWishlisted) =>
+      currentlyWishlisted
         ? wishlistApi.remove(product._id)
         : wishlistApi.add(product._id),
-    onMutate: () => setIsWishlisted((prev) => !prev),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['wishlist'] });
-      toast.success(isWishlisted ? 'Removed from wishlist' : 'Added to wishlist');
+    onSuccess: (_, currentlyWishlisted) => {
+      setIsWishlisted(!currentlyWishlisted);
+      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+      toast.success(
+        !currentlyWishlisted ? "Added to wishlist" : "Removed from wishlist",
+      );
     },
-    onError: () => {
-      setIsWishlisted((prev) => !prev); // revert
-      toast.error('Failed to update wishlist');
+    onError: (err) => {
+      toast.error(err.response?.data?.message || "Failed to update wishlist");
     },
   });
 
   const handleWishlist = (e) => {
     e.stopPropagation();
     if (!isAuthenticated) {
-      toast.error('Please login to save to wishlist');
-      navigate('/login');
+      toast.error("Please login to save to wishlist");
+      navigate("/login");
       return;
     }
-    toggleWishlist();
+    // Pass current isWishlisted state as argument to mutationFn
+    toggleWishlist(isWishlisted);
   };
 
   const handleClick = () => navigate(`/products/${product.slug}`);
@@ -105,9 +114,13 @@ export const ProductCard = ({ product, index = 0, showWishlistStatus = false }) 
         {/* Top badges row */}
         <div className="absolute top-3 left-3 right-3 flex items-start justify-between">
           {/* Condition badge */}
-          <span className={`px-2.5 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm ${getConditionColor(product.condition)}`}>
-            {product.condition === 'like-new' ? 'Like New' : 
-             product.condition.charAt(0).toUpperCase() + product.condition.slice(1)}
+          <span
+            className={`px-2.5 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm ${getConditionColor(product.condition)}`}
+          >
+            {product.condition === "like-new"
+              ? "Like New"
+              : product.condition.charAt(0).toUpperCase() +
+                product.condition.slice(1)}
           </span>
 
           {/* Wishlist button */}
@@ -120,8 +133,8 @@ export const ProductCard = ({ product, index = 0, showWishlistStatus = false }) 
             <Heart
               className={`w-4 h-4 transition-all duration-200 ${
                 isWishlisted
-                  ? 'fill-red-500 text-red-500'
-                  : 'text-slate-400 hover:text-red-400'
+                  ? "fill-red-500 text-red-500"
+                  : "text-slate-400 hover:text-red-400"
               }`}
             />
           </motion.button>
@@ -130,14 +143,16 @@ export const ProductCard = ({ product, index = 0, showWishlistStatus = false }) 
         {/* AI Deal badge */}
         {dealVerdict && (
           <div className="absolute bottom-3 left-3">
-            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm
-              ${dealVerdict.color === 'green'
-                ? 'bg-green-500/90 text-white'
-                : dealVerdict.color === 'yellow'
-                ? 'bg-yellow-500/90 text-white'
-                : dealVerdict.color === 'orange'
-                ? 'bg-orange-500/90 text-white'
-                : 'bg-red-500/90 text-white'
+            <div
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold backdrop-blur-sm
+              ${
+                dealVerdict.color === "green"
+                  ? "bg-green-500/90 text-white"
+                  : dealVerdict.color === "yellow"
+                    ? "bg-yellow-500/90 text-white"
+                    : dealVerdict.color === "orange"
+                      ? "bg-orange-500/90 text-white"
+                      : "bg-red-500/90 text-white"
               }`}
             >
               <Zap className="w-3 h-3" />
@@ -187,7 +202,7 @@ export const ProductCard = ({ product, index = 0, showWishlistStatus = false }) 
         </div>
 
         {/* Seller info */}
-        {product.sellerId && typeof product.sellerId === 'object' && (
+        {product.sellerId && typeof product.sellerId === "object" && (
           <div className="flex items-center gap-2 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700/50">
             <div className="w-6 h-6 rounded-full bg-gradient-to-br from-primary-500 to-blue-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
               {product.sellerId.name?.[0]?.toUpperCase()}

@@ -53,13 +53,18 @@ export default function ProductDetail() {
   const { data: productData, isLoading } = useQuery({
     queryKey: ["product", slug],
     queryFn: () => productsApi.getBySlug(slug),
-    onSuccess: (res) => {
-      setIsWishlisted(res.data.data.product.isWishlisted || false);
-    },
   });
 
   const product = productData?.data?.data?.product;
+
+  useEffect(() => {
+    if (product) {
+      setIsWishlisted(product.isWishlisted || false);
+    }
+  }, [product]);
+  
   const { addProduct } = useRecentlyViewed();
+
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -110,18 +115,27 @@ export default function ProductDetail() {
 
   // ── Wishlist ──────────────────────────────────────────────────────────────
   const { mutate: toggleWishlist } = useMutation({
-    mutationFn: () =>
-      isWishlisted
+    mutationFn: (currentlyWishlisted) =>
+      currentlyWishlisted
         ? wishlistApi.remove(product._id)
         : wishlistApi.add(product._id),
-    onMutate: () => setIsWishlisted((p) => !p),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["wishlist"] });
+
+    onSuccess: (_, currentlyWishlisted) => {
+      setIsWishlisted(!currentlyWishlisted);
+
+      queryClient.invalidateQueries({
+        queryKey: ["wishlist"],
+      });
+
       toast.success(
-        isWishlisted ? "Removed from wishlist" : "Saved to wishlist!",
+        !currentlyWishlisted ? "Saved to wishlist!" : "Removed from wishlist",
       );
     },
-    onError: () => setIsWishlisted((p) => !p),
+
+    onError: (_, currentlyWishlisted) => {
+      setIsWishlisted(currentlyWishlisted);
+      toast.error("Failed to update wishlist");
+    },
   });
 
   // ── Start chat ────────────────────────────────────────────────────────────
@@ -149,7 +163,7 @@ export default function ProductDetail() {
       navigate("/login");
       return;
     }
-    toggleWishlist();
+    toggleWishlist(isWishlisted);
   };
 
   const handleChat = () => {

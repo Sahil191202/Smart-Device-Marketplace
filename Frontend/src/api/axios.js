@@ -79,20 +79,38 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const response = await api.post('/auth/refresh');
+        // Include current (expired) token in header so backend can extract userId
+        const { useAuthStore } = require('../store/auth.store');
+        const expiredToken = useAuthStore.getState().accessToken;
+
+        const response = await axios.post(
+          `${API_BASE_URL}/auth/refresh`,
+          {},
+          {
+            withCredentials: true,
+            headers: expiredToken
+              ? { Authorization: `Bearer ${expiredToken}` }
+              : {},
+          }
+        );
+
         const newToken = response.data.data.accessToken;
 
-        const { useAuthStore } = require('../store/auth.store');
-        useAuthStore.getState().setAccessToken(newToken);
+        const { useAuthStore: store } = require('../store/auth.store');
+        store.getState().setAccessToken(newToken);
 
         processQueue(null, newToken);
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
+
         return api(originalRequest);
       } catch (refreshError) {
         processQueue(refreshError, null);
+
         const { useAuthStore } = require('../store/auth.store');
         useAuthStore.getState().logout();
+
         window.location.href = '/login';
+
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;
