@@ -3,7 +3,9 @@ const { createClient } = require('redis');
 const logger = require('./logger');
 const env = require('./env');
 
-const REDIS_URL = env.REDIS_URL
+const REDIS_URL = env.REDIS_PASSWORD
+  ? `redis://:${env.REDIS_PASSWORD}@${env.REDIS_HOST}:${env.REDIS_PORT}`
+  : `redis://${env.REDIS_HOST}:${env.REDIS_PORT}`;
 
 const createRedisClient = (role = 'default') => {
   const client = createClient({

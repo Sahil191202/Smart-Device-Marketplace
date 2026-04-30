@@ -12,7 +12,9 @@ const envSchema = Joi.object({
   MONGODB_DB_NAME: Joi.string().required(),
 
   // Redis
-  REDIS_URL: Joi.string().required(),
+  REDIS_HOST: Joi.string().default("localhost"),
+  REDIS_PORT: Joi.number().default(6379),
+  REDIS_PASSWORD: Joi.string().allow("").default(""),
 
   // JWT (RS256 — we use base64-encoded PEM keys in env for Docker compatibility)
   JWT_ACCESS_SECRET: Joi.string().min(32).required(),
