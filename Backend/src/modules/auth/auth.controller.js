@@ -14,14 +14,27 @@ const REFRESH_COOKIE_OPTIONS = {
   secure: env.NODE_ENV === "production", // HTTPS only in production
   sameSite: env.NODE_ENV === "production" ? "strict" : "lax", // CSRF protection
   maxAge: REFRESH_TOKEN_EXPIRY_MS,
-  path: "/api/v1/auth", // cookie only sent to auth routes
+  path: "/", // cookie only sent to auth routes
 };
 
 // Embed token family in cookie name to support multiple sessions
 // Alternative: store family in a separate cookie
-const setRefreshCookie = (res, token, family, userId = null) => {
-  const cookiePayload = JSON.stringify({ token, family, userId });
-  res.cookie(TOKEN_COOKIE_NAME, cookiePayload, REFRESH_COOKIE_OPTIONS);
+const setRefreshCookie = (res, refreshToken, family, userId) => {
+  res.cookie(
+    TOKEN_COOKIE_NAME,
+    JSON.stringify({
+      token: refreshToken,
+      family,
+      userId,
+    }),
+    {
+      httpOnly: true,
+      secure: false, // IMPORTANT for localhost
+      sameSite: "lax", // IMPORTANT
+      path: "/",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
+  );
 };
 
 const clearRefreshCookie = (res) => {
@@ -54,6 +67,7 @@ const login = asyncWrapper(async (req, res) => {
 const refresh = asyncWrapper(async (req, res) => {
   const cookieRaw = req.cookies[TOKEN_COOKIE_NAME];
 
+  // No refresh cookie
   if (!cookieRaw) {
     return res.status(401).json({
       success: false,
@@ -63,10 +77,16 @@ const refresh = asyncWrapper(async (req, res) => {
   }
 
   let cookieData;
+
+  // Parse cookie safely
   try {
-    cookieData = JSON.parse(cookieRaw);
-  } catch {
+    cookieData =
+      typeof cookieRaw === "string" ? JSON.parse(cookieRaw) : cookieRaw;
+  } catch (err) {
+    console.log("COOKIE PARSE ERROR:", err);
+
     clearRefreshCookie(res);
+
     return res.status(401).json({
       success: false,
       message: "Invalid session",
@@ -74,10 +94,18 @@ const refresh = asyncWrapper(async (req, res) => {
     });
   }
 
-  const { token: refreshToken, family, userId: cookieUserId } = cookieData;
+  const { token: refreshToken, family, userId } = cookieData;
 
-  if (!refreshToken || !family) {
+  console.log({
+    refreshToken,
+    family,
+    userId,
+  });
+
+  // Validate cookie payload
+  if (!refreshToken || !family || !userId) {
     clearRefreshCookie(res);
+
     return res.status(401).json({
       success: false,
       message: "Invalid session data",
@@ -85,33 +113,8 @@ const refresh = asyncWrapper(async (req, res) => {
     });
   }
 
-  // Extract userId from expired access token OR from cookie
-  let userId = cookieUserId || null;
-
-  // Try to decode the access token (even if expired) to get userId
-  if (!userId) {
-    const authHeader = req.headers.authorization;
-    if (authHeader?.startsWith("Bearer ")) {
-      try {
-        const jwt = require("jsonwebtoken");
-        const decoded = jwt.decode(authHeader.slice(7));
-        userId = decoded?.sub || null;
-      } catch {
-        /* ignore */
-      }
-    }
-  }
-
-  if (!userId) {
-    clearRefreshCookie(res);
-    return res.status(401).json({
-      success: false,
-      message: "Cannot identify user session",
-      code: "UNAUTHORIZED",
-    });
-  }
-
   try {
+    // Generate new tokens
     const tokens = await authService.refreshTokens({
       refreshToken,
       family,
@@ -120,15 +123,40 @@ const refresh = asyncWrapper(async (req, res) => {
       userAgent: req.get("User-Agent"),
     });
 
-    // Rotate cookie with new token + userId embedded
-    setRefreshCookie(res, tokens.refreshToken, tokens.family, userId);
+    // Ensure access token exists
+    if (!tokens?.accessToken) {
+      throw new Error("Access token was not generated");
+    }
 
-    apiResponse.success(res, {
+    // Rotate refresh cookie
+    res.cookie(
+      TOKEN_COOKIE_NAME,
+      JSON.stringify({
+        token: tokens.refreshToken,
+        family: tokens.family,
+        userId,
+      }),
+      {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 1000 * 60 * 60 * 24 * 7, // 7 days
+      },
+    );
+
+    // Send new access token
+    return apiResponse.success(res, {
       message: "Token refreshed",
-      data: { accessToken: tokens.accessToken },
+      data: {
+        accessToken: tokens.accessToken,
+      },
     });
   } catch (err) {
+    console.log("REFRESH ERROR:", err);
+
     clearRefreshCookie(res);
+
     throw err;
   }
 });

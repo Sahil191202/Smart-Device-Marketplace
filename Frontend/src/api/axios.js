@@ -1,11 +1,12 @@
-import axios from 'axios';
-import { API_BASE_URL } from '../utils/constants';
+import axios from "axios";
+import { API_BASE_URL } from "../utils/constants";
+import { useAuthStore } from "../store/auth.store";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -18,19 +19,22 @@ api.interceptors.request.use(
 
     try {
       // Try Zustand store
-      const { useAuthStore } = require('../store/auth.store');
       token = useAuthStore.getState().accessToken;
-    } catch { /* ignore */ }
+    } catch {
+      /* ignore */
+    }
 
     // Fallback: read directly from persisted localStorage
     if (!token) {
       try {
-        const persisted = localStorage.getItem('auth-storage');
+        const persisted = localStorage.getItem("auth-storage");
         if (persisted) {
           const parsed = JSON.parse(persisted);
           token = parsed?.state?.accessToken || null;
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
     if (token) {
@@ -39,7 +43,7 @@ api.interceptors.request.use(
 
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => Promise.reject(error),
 );
 
 // Response interceptor
@@ -61,9 +65,10 @@ api.interceptors.response.use(
 
     if (
       error.response?.status === 401 &&
-      error.response?.data?.code === 'TOKEN_EXPIRED' &&
+      error.response?.data?.code === "TOKEN_EXPIRED" &&
       !originalRequest._retry
     ) {
+
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -79,8 +84,6 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // Include current (expired) token in header so backend can extract userId
-        const { useAuthStore } = require('../store/auth.store');
         const expiredToken = useAuthStore.getState().accessToken;
 
         const response = await axios.post(
@@ -89,27 +92,28 @@ api.interceptors.response.use(
           {
             withCredentials: true,
             headers: expiredToken
-              ? { Authorization: `Bearer ${expiredToken}` }
+              ? {
+                  Authorization: `Bearer ${expiredToken}`,
+                }
               : {},
-          }
+          },
         );
 
         const newToken = response.data.data.accessToken;
 
-        const { useAuthStore: store } = require('../store/auth.store');
-        store.getState().setAccessToken(newToken);
+        useAuthStore.getState().setAccessToken(newToken);
 
         processQueue(null, newToken);
+
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
         return api(originalRequest);
       } catch (refreshError) {
-        processQueue(refreshError, null);
+        console.error(refreshError);
 
-        const { useAuthStore } = require('../store/auth.store');
         useAuthStore.getState().logout();
 
-        window.location.href = '/login';
+        window.location.href = "/login";
 
         return Promise.reject(refreshError);
       } finally {
@@ -118,7 +122,7 @@ api.interceptors.response.use(
     }
 
     return Promise.reject(error);
-  }
+  },
 );
 
 export default api;
